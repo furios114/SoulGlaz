@@ -1,471 +1,474 @@
-const map = L.map("map", {
-
-    zoomControl: true,
-
-    minZoom: 2,
-
-    maxZoom: 18
-
-}).setView([50.0755, 14.4378], 5);
+// ===============================
+// SOULGLAZ
+// RADAR + VISION
+// ===============================
 
 
-/*
-    REAL WORLD MAP
+// ===============================
+// RADAR
+// ===============================
 
-    OpenStreetMap
-*/
+const map = L.map("map").setView([59.93, 30.31], 7);
 
 L.tileLayer(
-    "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-    {
-        maxZoom: 19,
-
-        attribution:
-            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }
+  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+  {
+    attribution: "&copy; OpenStreetMap"
+  }
 ).addTo(map);
 
 
-/*
-    AIRCRAFT STORAGE
-*/
+const aircraftMarkers = {};
 
-const aircraftMarkers = new Map();
+const objectCountElement =
+  document.getElementById("objectCount");
 
+const latElement =
+  document.getElementById("lat");
 
-/*
-    COUNTERS
-*/
-
-const aircraftCount =
-    document.getElementById("aircraftCount");
-
-const objectCount =
-    document.getElementById("objectCount");
+const lonElement =
+  document.getElementById("lon");
 
 
-/*
-    CREATE AIRCRAFT MARKER
-*/
+async function loadAircraft() {
 
-function createAircraftMarker(aircraft) {
+  try {
 
-    const heading =
-        aircraft.heading || 0;
+    const url =
+      "https://opensky-network.org/api/states/all" +
+      "?lamin=35&lomin=-10&lamax=70&lomax=40";
 
+    const response = await fetch(url);
 
-    const icon = L.divIcon({
+    if (!response.ok) {
+      throw new Error("OpenSky HTTP " + response.status);
+    }
 
-        className: "aircraft-marker",
+    const data = await response.json();
 
-        html: `
-            <div
-                class="aircraft"
-                style="transform: rotate(${heading}deg)"
-                title="${aircraft.callsign || "UNKNOWN"}"
-            >
-                ✈
-            </div>
-        `,
+    const states = data.states || [];
 
-        iconSize: [26, 26],
+    const currentAircraft = new Set();
 
-        iconAnchor: [13, 13]
+    states.forEach(state => {
+
+      const icao = state[0];
+      const callsign = (state[1] || "UNKNOWN").trim();
+
+      const longitude = state[5];
+      const latitude = state[6];
+
+      const altitude = state[7];
+      const velocity = state[9];
+      const heading = state[10];
+
+      if (
+        longitude === null ||
+        latitude === null
+      ) {
+        return;
+      }
+
+      currentAircraft.add(icao);
+
+      const popup = `
+        <b>${callsign}</b><br>
+        ICAO: ${icao}<br>
+        Country: ${state[2] || "UNKNOWN"}<br>
+        Altitude: ${Math.round(altitude || 0)} m<br>
+        Speed: ${Math.round((velocity || 0) * 3.6)} km/h<br>
+        Heading: ${Math.round(heading || 0)}°
+      `;
+
+      if (!aircraftMarkers[icao]) {
+
+        const marker =
+          L.circleMarker(
+            [latitude, longitude],
+            {
+              radius: 6,
+              color: "#00ff66",
+              fillColor: "#00ff66",
+              fillOpacity: 0.8
+            }
+          )
+          .addTo(map)
+          .bindPopup(popup);
+
+        aircraftMarkers[icao] = marker;
+
+      } else {
+
+        aircraftMarkers[icao]
+          .setLatLng([latitude, longitude])
+          .setPopupContent(popup);
+
+      }
 
     });
 
 
-    const marker =
-        L.marker(
-            [
-                aircraft.latitude,
-                aircraft.longitude
-            ],
-            {
-                icon
-            }
+    Object.keys(aircraftMarkers).forEach(icao => {
+
+      if (!currentAircraft.has(icao)) {
+
+        map.removeLayer(
+          aircraftMarkers[icao]
         );
 
+        delete aircraftMarkers[icao];
 
-    marker.bindPopup(`
+      }
 
-        <div class="aircraft-popup">
-
-            <b>
-                ${aircraft.callsign || "UNKNOWN"}
-            </b>
-
-            <br><br>
-
-            ICAO:
-            ${aircraft.icao || "UNKNOWN"}
-
-            <br>
-
-            Altitude:
-            ${Math.round(aircraft.altitude || 0)} m
-
-            <br>
-
-            Speed:
-            ${Math.round(
-                (aircraft.speed || 0) * 3.6
-            )} km/h
-
-            <br>
-
-            Heading:
-            ${Math.round(heading)}°
-
-        </div>
-
-    `);
+    });
 
 
-    marker.addTo(map);
+    objectCountElement.textContent =
+      Object.keys(aircraftMarkers).length;
 
+  } catch (error) {
 
-    return marker;
+    console.error(
+      "Aircraft API error:",
+      error
+    );
+
+  }
 
 }
 
-
-/*
-    GET REAL AIRCRAFT DATA
-    FROM OPENSKY
-*/
-
-async function loadAircraft() {
-
-    try {
-
-        /*
-            Bounding box:
-
-            Europe
-
-            latitude:
-            35 → 60
-
-            longitude:
-            -10 → 35
-        */
-
-        const url =
-            "https://opensky-network.org/api/states/all" +
-            "?lamin=35" +
-            "&lomin=-10" +
-            "&lamax=60" +
-            "&lomax=35";
-
-
-        const response =
-            await fetch(url);
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                "OpenSky HTTP " +
-                response.status
-            );
-
-        }
-
-
-        const data =
-            await response.json();
-
-
-        const states =
-            data.states || [];
-
-
-        /*
-            ICAO INDEX
-        */
-
-        const visibleIds =
-            new Set();
-
-
-        let aircraftTotal = 0;
-
-
-        states.forEach((state) => {
-
-            /*
-                OpenSky state vector:
-
-                0 icao24
-                1 callsign
-                2 country
-                3 time position
-                4 last contact
-                5 longitude
-                6 latitude
-                7 baro altitude
-                8 on ground
-                9 velocity
-                10 true track
-            */
-
-
-            const icao =
-                state[0];
-
-            const callsign =
-                (state[1] || "")
-                .trim();
-
-
-            const longitude =
-                state[5];
-
-            const latitude =
-                state[6];
-
-
-            if (
-                latitude === null ||
-                longitude === null
-            ) {
-
-                return;
-
-            }
-
-
-            visibleIds.add(icao);
-
-            aircraftTotal++;
-
-
-            const aircraft = {
-
-                icao,
-
-                callsign,
-
-                country:
-                    state[2],
-
-                longitude,
-
-                latitude,
-
-                altitude:
-                    state[7],
-
-                speed:
-                    state[9],
-
-                heading:
-                    state[10]
-
-            };
-
-
-            /*
-                UPDATE EXISTING
-                MARKER
-            */
-
-            if (
-                aircraftMarkers.has(icao)
-            ) {
-
-                const marker =
-                    aircraftMarkers.get(icao);
-
-
-                marker.setLatLng([
-                    latitude,
-                    longitude
-                ]);
-
-
-                const element =
-                    marker.getElement();
-
-
-                if (element) {
-
-                    const plane =
-                        element.querySelector(
-                            ".aircraft"
-                        );
-
-
-                    if (plane) {
-
-                        plane.style.transform =
-                            `rotate(${aircraft.heading || 0}deg)`;
-
-                    }
-
-                }
-
-
-                marker.setPopupContent(`
-
-                    <div class="aircraft-popup">
-
-                        <b>
-                            ${callsign || "UNKNOWN"}
-                        </b>
-
-                        <br><br>
-
-                        ICAO:
-                        ${icao}
-
-                        <br>
-
-                        Country:
-                        ${aircraft.country}
-
-                        <br>
-
-                        Altitude:
-                        ${Math.round(
-                            aircraft.altitude || 0
-                        )} m
-
-                        <br>
-
-                        Speed:
-                        ${Math.round(
-                            (aircraft.speed || 0) * 3.6
-                        )} km/h
-
-                        <br>
-
-                        Heading:
-                        ${Math.round(
-                            aircraft.heading || 0
-                        )}°
-
-                    </div>
-
-                `);
-
-
-            } else {
-
-                /*
-                    CREATE NEW
-                */
-
-                const marker =
-                    createAircraftMarker(
-                        aircraft
-                    );
-
-
-                aircraftMarkers.set(
-                    icao,
-                    marker
-                );
-
-            }
-
-        });
-
-
-        /*
-            REMOVE AIRCRAFT
-            THAT DISAPPEARED
-        */
-
-        for (
-            const [
-                icao,
-                marker
-            ] of aircraftMarkers
-        ) {
-
-            if (
-                !visibleIds.has(icao)
-            ) {
-
-                map.removeLayer(marker);
-
-                aircraftMarkers.delete(
-                    icao
-                );
-
-            }
-
-        }
-
-
-        aircraftCount.textContent =
-            aircraftTotal.toLocaleString();
-
-
-        objectCount.textContent =
-            `OBJECTS: ${aircraftTotal.toLocaleString()}`;
-
-
-        console.log(
-            "SoulGlaz:",
-            aircraftTotal,
-            "aircraft"
-        );
-
-
-    } catch (error) {
-
-        console.error(
-            "SoulGlaz aircraft error:",
-            error
-        );
-
-        objectCount.textContent =
-            "DATA ERROR";
-
-    }
-
-}
-
-
-/*
-    INITIAL LOAD
-*/
 
 loadAircraft();
 
-
-/*
-    UPDATE
-
-    Don't hammer the API.
-*/
-
 setInterval(
-    loadAircraft,
-    30000
+  loadAircraft,
+  30000
 );
 
 
-/*
-    SHOW MAP POSITION
-*/
+map.on("mousemove", event => {
 
-map.on(
-    "mousemove",
-    function (event) {
+  latElement.textContent =
+    event.latlng.lat.toFixed(6);
 
-        document.getElementById(
-            "mapPosition"
-        ).textContent =
+  lonElement.textContent =
+    event.latlng.lng.toFixed(6);
 
-            event.latlng.lat.toFixed(4) +
-            "° N / " +
+});
 
-            event.latlng.lng.toFixed(4) +
-            "° E";
+
+// ===============================
+// VISION
+// ===============================
+
+const video =
+  document.getElementById("camera");
+
+const canvas =
+  document.getElementById("visionCanvas");
+
+const ctx =
+  canvas.getContext("2d");
+
+const startButton =
+  document.getElementById("startCamera");
+
+const switchButton =
+  document.getElementById("switchCamera");
+
+const cameraMessage =
+  document.getElementById("cameraMessage");
+
+const visionStatus =
+  document.getElementById("visionStatus");
+
+const peopleCount =
+  document.getElementById("peopleCount");
+
+const detectedCount =
+  document.getElementById("detectedCount");
+
+const detectionList =
+  document.getElementById("detectionList");
+
+
+let cameraStream = null;
+
+let currentCamera = "environment";
+
+let model = null;
+
+let detecting = false;
+
+
+// ===============================
+// START CAMERA
+// ===============================
+
+async function startCamera() {
+
+  try {
+
+    if (cameraStream) {
+
+      cameraStream
+        .getTracks()
+        .forEach(track => track.stop());
 
     }
+
+
+    cameraStream =
+      await navigator.mediaDevices.getUserMedia({
+
+        video: {
+          facingMode: currentCamera,
+          width: {
+            ideal: 1280
+          },
+          height: {
+            ideal: 720
+          }
+        },
+
+        audio: false
+
+      });
+
+
+    video.srcObject =
+      cameraStream;
+
+    cameraMessage.style.display =
+      "none";
+
+    visionStatus.textContent =
+      "LOADING MODEL";
+
+
+    if (!model) {
+
+      model =
+        await cocoSsd.load();
+
+    }
+
+
+    visionStatus.textContent =
+      "ONLINE";
+
+    detecting = true;
+
+    detectObjects();
+
+  } catch (error) {
+
+    console.error(error);
+
+    visionStatus.textContent =
+      "ERROR";
+
+    cameraMessage.style.display =
+      "flex";
+
+    cameraMessage.textContent =
+      "CAMERA ACCESS DENIED";
+
+  }
+
+}
+
+
+// ===============================
+// SWITCH CAMERA
+// ===============================
+
+switchButton.addEventListener(
+  "click",
+  async () => {
+
+    currentCamera =
+      currentCamera === "environment"
+        ? "user"
+        : "environment";
+
+    await startCamera();
+
+  }
 );
+
+
+// ===============================
+// START BUTTON
+// ===============================
+
+startButton.addEventListener(
+  "click",
+  startCamera
+);
+
+
+// ===============================
+// OBJECT DETECTION
+// ===============================
+
+async function detectObjects() {
+
+  if (!detecting || !model) {
+    return;
+  }
+
+  if (
+    video.readyState <
+    HTMLMediaElement.HAVE_ENOUGH_DATA
+  ) {
+
+    requestAnimationFrame(
+      detectObjects
+    );
+
+    return;
+
+  }
+
+
+  canvas.width =
+    video.videoWidth;
+
+  canvas.height =
+    video.videoHeight;
+
+
+  const predictions =
+    await model.detect(video);
+
+
+  ctx.clearRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+
+  let people = 0;
+
+  const detectedNames = [];
+
+
+  predictions.forEach(
+    prediction => {
+
+      const [
+        x,
+        y,
+        width,
+        height
+      ] = prediction.bbox;
+
+
+      const score =
+        prediction.score;
+
+
+      if (score < 0.55) {
+        return;
+      }
+
+
+      const name =
+        prediction.class;
+
+
+      if (name === "person") {
+        people++;
+      }
+
+
+      detectedNames.push(
+        `${name} ${Math.round(score * 100)}%`
+      );
+
+
+      // BOX
+
+      ctx.strokeStyle =
+        "#00ff66";
+
+      ctx.lineWidth = 3;
+
+      ctx.strokeRect(
+        x,
+        y,
+        width,
+        height
+      );
+
+
+      // LABEL
+
+      const label =
+        `${name} ${Math.round(score * 100)}%`;
+
+      ctx.font =
+        "16px monospace";
+
+
+      const textWidth =
+        ctx.measureText(label).width;
+
+
+      ctx.fillStyle =
+        "#00ff66";
+
+      ctx.fillRect(
+        x,
+        Math.max(0, y - 24),
+        textWidth + 10,
+        24
+      );
+
+
+      ctx.fillStyle =
+        "#000";
+
+      ctx.fillText(
+        label,
+        x + 5,
+        Math.max(17, y - 7)
+      );
+
+    }
+  );
+
+
+  peopleCount.textContent =
+    people;
+
+  detectedCount.textContent =
+    detectedNames.length;
+
+
+  if (detectedNames.length === 0) {
+
+    detectionList.textContent =
+      "Nothing detected";
+
+  } else {
+
+    detectionList.innerHTML =
+      detectedNames
+        .map(
+          item =>
+            `<div class="detection-item">${item}</div>`
+        )
+        .join("");
+
+  }
+
+
+  requestAnimationFrame(
+    detectObjects
+  );
+
+}
