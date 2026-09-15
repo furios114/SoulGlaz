@@ -4,15 +4,32 @@
     padding: 0;
 }
 
+
+html,
 body {
-    background: #030608;
-    color: #d8faff;
-    font-family: Arial, sans-serif;
+
+    width: 100%;
+    height: 100%;
+
     overflow: hidden;
+
+    background: #020805;
+
+    color: #d7ffe5;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
 }
 
+
 .header {
+
     position: fixed;
+
+    z-index: 1000;
+
     top: 0;
     left: 0;
 
@@ -22,35 +39,50 @@ body {
     display: flex;
     align-items: center;
 
-    padding: 0 24px;
+    padding: 0 22px;
 
-    background: rgba(3, 7, 9, 0.95);
+    background:
+        rgba(2, 10, 5, .96);
 
-    border-bottom: 1px solid #173039;
-
-    z-index: 100;
+    border-bottom:
+        1px solid #174b29;
 }
+
 
 .logo {
+
     font-size: 20px;
-    font-weight: bold;
+
+    font-weight: 800;
+
     letter-spacing: 4px;
+
+    color: #d9ffe6;
 }
+
 
 .logo span {
-    color: #54e6ed;
+
+    color: #38ff76;
+
 }
+
 
 .status {
+
     margin-left: 35px;
 
-    font-size: 11px;
-    letter-spacing: 2px;
+    font-size: 10px;
 
-    color: #59e69b;
+    letter-spacing: 3px;
+
+    color: #42ff82;
+
 }
 
+
 .dot {
+
     display: inline-block;
 
     width: 7px;
@@ -58,252 +90,334 @@ body {
 
     margin-right: 7px;
 
-    background: #59e69b;
-
     border-radius: 50%;
 
-    box-shadow: 0 0 10px #59e69b;
+    background: #42ff82;
+
+    box-shadow:
+        0 0 8px #42ff82;
+
 }
 
-.radar {
+
+#objectCount {
+
+    margin-left: auto;
+
+    font-size: 10px;
+
+    color: #638c70;
+
+    letter-spacing: 1px;
+
+}
+
+
+#map {
+
     position: absolute;
 
-    width: 700px;
-    height: 700px;
+    top: 64px;
+    left: 0;
 
-    left: 50%;
-    top: 54%;
+    width: 100%;
+    height: calc(100% - 64px);
 
-    transform: translate(-50%, -50%);
+    background: #06100a;
+}
 
-    border-radius: 50%;
+
+.leaflet-tile {
+
+    filter:
+        brightness(.55)
+        contrast(1.25)
+        saturate(.7)
+        hue-rotate(80deg);
+}
+
+
+.leaflet-control-attribution {
 
     background:
-        radial-gradient(
-            circle,
-            rgba(50, 220, 230, 0.08),
-            rgba(0, 0, 0, 0.15) 60%,
-            transparent 70%
-        );
+        rgba(0, 10, 5, .8) !important;
 
-    border: 1px solid #17383e;
+    color: #5f8f6d !important;
 
-    overflow: hidden;
+    font-size: 9px;
+
 }
 
-.radar-ring {
-    position: absolute;
 
-    left: 50%;
-    top: 50%;
+.leaflet-control-attribution a {
 
-    transform: translate(-50%, -50%);
+    color: #70c987 !important;
 
-    border: 1px solid #17444b;
-
-    border-radius: 50%;
 }
 
-.ring-1 {
-    width: 25%;
-    height: 25%;
-}
-
-.ring-2 {
-    width: 50%;
-    height: 50%;
-}
-
-.ring-3 {
-    width: 75%;
-    height: 75%;
-}
-
-.cross {
-    position: absolute;
-
-    background: #14383e;
-}
-
-.horizontal {
-    width: 100%;
-    height: 1px;
-
-    top: 50%;
-}
-
-.vertical {
-    width: 1px;
-    height: 100%;
-
-    left: 50%;
-}
-
-.radar-sweep {
-    position: absolute;
-
-    width: 50%;
-    height: 2px;
-
-    top: 50%;
-    left: 50%;
-
-    transform-origin: left center;
-
-    background: linear-gradient(
-        90deg,
-        #65f2f2,
-        transparent
-    );
-
-    box-shadow: 0 0 15px #65f2f2;
-
-    animation: sweep 4s linear infinite;
-}
-
-@keyframes sweep {
-    from {
-        transform: rotate(0deg);
-    }
-
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-.object {
-    position: absolute;
-
-    font-size: 20px;
-
-    color: #67e9ee;
-
-    text-shadow:
-        0 0 5px #67e9ee,
-        0 0 15px #67e9ee;
-}
-
-.plane-1 {
-    left: 62%;
-    top: 28%;
-}
-
-.plane-2 {
-    left: 31%;
-    top: 63%;
-}
-
-.helicopter {
-    left: 68%;
-    top: 58%;
-}
-
-.ship {
-    left: 25%;
-    top: 34%;
-
-    color: #6fa9ff;
-
-    text-shadow:
-        0 0 5px #6fa9ff,
-        0 0 15px #6fa9ff;
-}
-
-.center {
-    position: absolute;
-
-    left: 50%;
-    top: 50%;
-
-    transform: translate(-50%, -50%);
-
-    color: #5ce6a0;
-
-    text-shadow: 0 0 15px #5ce6a0;
-}
 
 .panel {
+
     position: fixed;
+
+    z-index: 900;
 
     top: 64px;
     left: 0;
     bottom: 0;
 
-    width: 240px;
+    width: 245px;
 
     padding: 25px 20px;
 
-    background: rgba(3, 8, 11, 0.94);
+    background:
+        rgba(2, 9, 5, .94);
 
-    border-right: 1px solid #173039;
+    border-right:
+        1px solid #174b29;
 
-    z-index: 50;
 }
+
 
 .panel h2 {
+
     margin-bottom: 25px;
 
-    color: #58e6ec;
+    color: #42ff82;
 
-    font-size: 14px;
+    font-size: 13px;
+
     letter-spacing: 3px;
+
 }
 
+
 .category {
+
     display: flex;
+
     justify-content: space-between;
+
+    align-items: center;
 
     padding: 15px 5px;
 
-    border-bottom: 1px solid #10262c;
+    border-bottom:
+        1px solid #102d1b;
 
-    color: #78939c;
-
-    font-size: 11px;
-}
-
-.category strong {
-    color: #d8faff;
-}
-
-.camera-button {
-    width: 100%;
-
-    margin-top: 30px;
-
-    padding: 13px;
-
-    background: #081519;
-
-    border: 1px solid #24545d;
-
-    color: #5ce6ed;
-
-    cursor: pointer;
+    color: #648a6e;
 
     font-size: 10px;
-    letter-spacing: 2px;
+
 }
 
-.camera-button:hover {
-    background: #0d2227;
+
+.category strong {
+
+    color: #c8ffda;
+
 }
+
+
+.info {
+
+    margin-top: 35px;
+
+    padding-top: 18px;
+
+    border-top:
+        1px solid #173c23;
+
+    font-size: 9px;
+
+    line-height: 2;
+
+    color: #55765e;
+
+}
+
+
+.info strong {
+
+    color: #42d96f;
+
+}
+
+
+.coordinates {
+
+    position: fixed;
+
+    z-index: 800;
+
+    right: 18px;
+    bottom: 18px;
+
+    padding: 10px 14px;
+
+    background:
+        rgba(2, 9, 5, .9);
+
+    border:
+        1px solid #174b29;
+
+    color: #5d8b68;
+
+    font-size: 9px;
+
+    line-height: 1.8;
+
+    letter-spacing: 1px;
+
+}
+
+
+.legend {
+
+    position: fixed;
+
+    z-index: 800;
+
+    left: 265px;
+    bottom: 18px;
+
+    display: flex;
+
+    gap: 18px;
+
+    padding: 9px 13px;
+
+    background:
+        rgba(2, 9, 5, .9);
+
+    border:
+        1px solid #174b29;
+
+    color: #679172;
+
+    font-size: 9px;
+
+}
+
+
+.legend i {
+
+    display: inline-block;
+
+    width: 7px;
+    height: 7px;
+
+    margin-right: 5px;
+
+    border-radius: 50%;
+
+}
+
+
+.air {
+
+    background: #42ff82;
+
+    box-shadow:
+        0 0 8px #42ff82;
+
+}
+
+
+.you {
+
+    background: #fff;
+
+}
+
+
+/*
+    AIRCRAFT MARKER
+*/
+
+.aircraft-marker {
+
+    background: transparent;
+
+    border: none;
+
+}
+
+
+.aircraft {
+
+    width: 26px;
+    height: 26px;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    color: #42ff82;
+
+    font-size: 20px;
+
+    text-shadow:
+        0 0 5px #42ff82,
+        0 0 12px #42ff82;
+
+}
+
+
+.aircraft::after {
+
+    content: "";
+
+    position: absolute;
+
+    width: 5px;
+    height: 5px;
+
+    border-radius: 50%;
+
+    background: #42ff82;
+
+    box-shadow:
+        0 0 10px #42ff82;
+
+}
+
+
+.aircraft-popup {
+
+    color: #baffc9;
+
+    background: #041008;
+
+}
+
 
 @media (max-width: 700px) {
 
-    .radar {
-        width: 90vw;
-        height: 90vw;
-
-        top: 58%;
-        left: 58%;
-    }
-
     .panel {
-        width: 175px;
+
+        width: 180px;
+
     }
 
     .logo {
+
         font-size: 15px;
+
     }
+
+    .status {
+
+        margin-left: 15px;
+
+    }
+
+    .legend {
+
+        left: 195px;
+
+    }
+
 }
