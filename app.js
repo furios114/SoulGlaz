@@ -1,12 +1,10 @@
 (() => {
   "use strict";
 
-  const VERSION = "2.0.0";
+  const VERSION = "2.0.1";
 
   const state = {
-    page: "home",
     currentApp: null,
-    terminalHistory: [],
     calcValue: "0",
     calcPrevious: null,
     calcOperator: null,
@@ -14,6 +12,10 @@
   };
 
   const $ = (selector) => document.querySelector(selector);
+
+  /* =========================
+     SAFE STORAGE
+  ========================= */
 
   const storage = {
     get(key, fallback = null) {
@@ -28,11 +30,22 @@
     set(key, value) {
       try {
         localStorage.setItem(key, JSON.stringify(value));
+        return true;
       } catch {
-        showToast("Storage unavailable");
+        return false;
       }
+    },
+
+    remove(key) {
+      try {
+        localStorage.removeItem(key);
+      } catch {}
     }
   };
+
+  /* =========================
+     HELPERS
+  ========================= */
 
   function escapeHTML(value) {
     return String(value)
@@ -43,21 +56,153 @@
       .replaceAll("'", "&#039;");
   }
 
-  function showToast(message) {
-    const toast = $("#toast");
-    toast.textContent = message;
-    toast.classList.add("show");
+  function toast(message) {
+    const element = $("#toast");
 
-    clearTimeout(showToast.timer);
-    showToast.timer = setTimeout(() => {
-      toast.classList.remove("show");
+    if (!element) return;
+
+    element.textContent = message;
+    element.classList.add("show");
+
+    clearTimeout(toast.timer);
+
+    toast.timer = setTimeout(() => {
+      element.classList.remove("show");
     }, 1800);
   }
 
-  function addTimeline(event) {
-    const timeline = storage.get("mindos_timeline", []);
+  /* =========================
+     BOOT
+  ========================= */
 
-    timeline.unshift({
+  function finishBoot() {
+    const boot = $("#boot");
+    const app = $("#app");
+
+    if (boot) boot.classList.add("hidden");
+    if (app) app.classList.remove("hidden");
+
+    const status = $("#jsStatus");
+
+    if (status) {
+      status.textContent = "SYSTEM READY";
+    }
+  }
+
+  function safeBoot() {
+    try {
+      updateClock();
+      updateNetwork();
+      updateMetrics();
+      updateGreeting();
+      renderTimeline();
+      renderSmartActions();
+    } catch (error) {
+      console.error("MINDOS boot:", error);
+    }
+
+    // Главное: загрузка НЕ зависит от остальных функций.
+    finishBoot();
+
+    try {
+      addTimeline("MINDOS started");
+    } catch {}
+
+    try {
+      registerServiceWorker();
+    } catch {}
+  }
+
+  /* =========================
+     CLOCK
+  ========================= */
+
+  function updateClock() {
+    const clock = $("#clock");
+
+    if (!clock) return;
+
+    clock.textContent = new Date().toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  }
+
+  /* =========================
+     NETWORK
+  ========================= */
+
+  function updateNetwork() {
+    const online = navigator.onLine;
+
+    const dot = $("#networkDot");
+    const text = $("#networkText");
+    const metric = $("#metricNetwork");
+
+    if (dot) {
+      dot.classList.toggle("offline", !online);
+    }
+
+    if (text) {
+      text.textContent = online ? "ONLINE" : "OFFLINE";
+    }
+
+    if (metric) {
+      metric.textContent = online ? "ONLINE" : "OFFLINE";
+    }
+  }
+
+  /* =========================
+     DEVICE METRICS
+  ========================= */
+
+  function updateMetrics() {
+    const threads = $("#metricThreads");
+    const memory = $("#metricMemory");
+
+    if (threads) {
+      threads.textContent =
+        navigator.hardwareConcurrency || "N/A";
+    }
+
+    if (memory) {
+      memory.textContent =
+        navigator.deviceMemory
+          ? `${navigator.deviceMemory} GB`
+          : "N/A";
+    }
+  }
+
+  /* =========================
+     GREETING
+  ========================= */
+
+  function updateGreeting() {
+    const element = $("#greeting");
+
+    if (!element) return;
+
+    const hour = new Date().getHours();
+
+    if (hour >= 5 && hour < 12) {
+      element.textContent = "GOOD MORNING";
+    } else if (hour >= 12 && hour < 18) {
+      element.textContent = "GOOD AFTERNOON";
+    } else if (hour >= 18 && hour < 24) {
+      element.textContent = "GOOD EVENING";
+    } else {
+      element.textContent = "SYSTEM";
+    }
+  }
+
+  /* =========================
+     TIMELINE
+  ========================= */
+
+  function addTimeline(event) {
+    const list = storage.get("mindos_timeline", []);
+
+    list.unshift({
       event,
       time: new Date().toLocaleTimeString([], {
         hour: "2-digit",
@@ -65,78 +210,117 @@
       })
     });
 
-    storage.set("mindos_timeline", timeline.slice(0, 30));
+    storage.set(
+      "mindos_timeline",
+      list.slice(0, 30)
+    );
+
     renderTimeline();
   }
 
   function renderTimeline() {
-    const timeline = $("#timeline");
-    const data = storage.get("mindos_timeline", []);
+    const element = $("#timeline");
 
-    if (!data.length) {
-      timeline.innerHTML = '<div class="empty">No activity yet.</div>';
+    if (!element) return;
+
+    const list = storage.get("mindos_timeline", []);
+
+    if (!Array.isArray(list) || list.length === 0) {
+      element.innerHTML =
+        '<div class="empty">No activity yet.</div>';
       return;
     }
 
-    timeline.innerHTML = data
+    element.innerHTML = list
       .slice(0, 8)
       .map(item => `
         <div class="timeline-item">
-          <div class="timeline-time">${escapeHTML(item.time)}</div>
-          <div class="timeline-event">${escapeHTML(item.event)}</div>
+          <div class="timeline-time">
+            ${escapeHTML(item.time)}
+          </div>
+
+          <div class="timeline-event">
+            ${escapeHTML(item.event)}
+          </div>
         </div>
       `)
       .join("");
   }
 
-  function updateClock() {
-    $("#clock").textContent = new Date().toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit"
-    });
+  function clearTimeline() {
+    storage.set("mindos_timeline", []);
+    renderTimeline();
+    toast("Timeline cleared");
   }
 
-  function updateNetwork() {
-    const online = navigator.onLine;
-    const dot = $("#networkDot");
+  /* =========================
+     SMART ACTIONS
+  ========================= */
 
-    dot.classList.toggle("offline", !online);
-    $("#networkText").textContent = online ? "ONLINE" : "OFFLINE";
-    $("#metricNetwork").textContent = online ? "ONLINE" : "OFFLINE";
+  function renderSmartActions() {
+    const element = $("#smartActions");
+
+    if (!element) return;
+
+    const notes = storage.get("mindos_notes", "");
+
+    if (!notes || !String(notes).trim()) {
+      element.classList.add("hidden");
+      return;
+    }
+
+    element.classList.remove("hidden");
+
+    element.innerHTML = `
+      <div class="eyebrow">SMART ACTION</div>
+
+      <div class="smart-title">
+        Your workspace is ready.
+      </div>
+
+      <div class="smart-text">
+        You have a saved note.
+        Continue where you stopped.
+      </div>
+
+      <button
+        class="smart-action"
+        data-app="notes"
+        type="button"
+      >
+        Open Notes →
+      </button>
+    `;
   }
 
-  function updateMetrics() {
-    $("#metricThreads").textContent =
-      navigator.hardwareConcurrency
-        ? navigator.hardwareConcurrency
-        : "—";
-
-    $("#metricMemory").textContent =
-      navigator.deviceMemory
-        ? `${navigator.deviceMemory} GB`
-        : "N/A";
-  }
-
-  function updateGreeting() {
-    const hour = new Date().getHours();
-
-    let text = "SYSTEM";
-
-    if (hour >= 5 && hour < 12) text = "GOOD MORNING";
-    else if (hour >= 12 && hour < 18) text = "GOOD AFTERNOON";
-    else if (hour >= 18 && hour < 24) text = "GOOD EVENING";
-
-    $("#greeting").textContent = text;
-  }
+  /* =========================
+     PAGE NAVIGATION
+  ========================= */
 
   function showPage(page) {
-    state.page = page;
+    const home = $("#home");
+    const apps = $("#apps");
 
-    $("#home").classList.toggle("hidden", page !== "home");
-    $("#apps").classList.toggle("hidden", page !== "apps");
+    if (home) {
+      home.classList.toggle(
+        "hidden",
+        page !== "home"
+      );
+    }
+
+    if (apps) {
+      apps.classList.toggle(
+        "hidden",
+        page !== "apps"
+      );
+    }
   }
 
-  const apps = {
+  /* =========================
+     APPLICATION SYSTEM
+  ========================= */
+
+  const appDefinitions = {
     terminal: {
       label: "SYSTEM",
       title: "Terminal",
@@ -175,47 +359,111 @@
   };
 
   function openApp(name) {
-    const app = apps[name];
+    try {
+      const definition = appDefinitions[name];
 
-    if (!app) return;
+      if (!definition) {
+        toast("Application not found");
+        return;
+      }
 
-    state.currentApp = name;
+      const view = $("#appView");
+      const content = $("#appContent");
 
-    $("#appHeaderLabel").textContent = app.label;
-    $("#appHeaderTitle").textContent = app.title;
-    $("#appView").classList.remove("hidden");
+      if (!view || !content) {
+        toast("Application system unavailable");
+        return;
+      }
 
-    $("#appContent").innerHTML = "";
-    app.render($("#appContent"));
+      state.currentApp = name;
 
-    addTimeline(`${app.title} opened`);
+      const label = $("#appHeaderLabel");
+      const title = $("#appHeaderTitle");
 
-    requestAnimationFrame(() => {
-      const focusTarget = $("#appContent input, #appContent textarea");
-      if (focusTarget && name === "terminal") focusTarget.focus();
-    });
+      if (label) {
+        label.textContent = definition.label;
+      }
+
+      if (title) {
+        title.textContent = definition.title;
+      }
+
+      content.innerHTML = "";
+
+      view.classList.remove("hidden");
+
+      definition.render(content);
+
+      addTimeline(`${definition.title} opened`);
+
+      if (name === "terminal") {
+        setTimeout(() => {
+          const input = $("#terminalInput");
+          if (input) input.focus();
+        }, 50);
+      }
+
+    } catch (error) {
+      console.error("MINDOS app error:", error);
+      toast("Application error");
+
+      const content = $("#appContent");
+
+      if (content) {
+        content.innerHTML = `
+          <div class="empty">
+            Application failed to start.
+          </div>
+        `;
+      }
+    }
   }
 
   function closeApp() {
     if (state.currentApp) {
-      addTimeline(`${apps[state.currentApp].title} closed`);
+      const definition =
+        appDefinitions[state.currentApp];
+
+      if (definition) {
+        addTimeline(`${definition.title} closed`);
+      }
     }
 
     state.currentApp = null;
-    $("#appView").classList.add("hidden");
-    $("#appContent").innerHTML = "";
+
+    const view = $("#appView");
+    const content = $("#appContent");
+
+    if (view) {
+      view.classList.add("hidden");
+    }
+
+    if (content) {
+      content.innerHTML = "";
+    }
   }
+
+  /* =========================
+     TERMINAL
+  ========================= */
 
   function renderTerminal(root) {
     root.innerHTML = `
       <div class="terminal">
-        <div id="terminalOutput" class="terminal-output">
-MINDOS Terminal ${VERSION}
-Type "help" to see available commands.
-      </div>
 
-        <form id="terminalForm" class="terminal-form">
+        <div id="terminalOutput"
+             class="terminal-output">
+MINDOS Terminal ${VERSION}
+Core: READY
+
+Type "help" for commands.
+        </div>
+
+        <form id="terminalForm"
+              class="terminal-form">
+
           <span>mindos&gt;</span>
+
           <input
             id="terminalInput"
             class="terminal-input"
@@ -223,45 +471,57 @@ Type "help" to see available commands.
             spellcheck="false"
             aria-label="Terminal command"
           >
+
         </form>
+
       </div>
     `;
 
-    $("#terminalForm").addEventListener("submit", event => {
+    const form = $("#terminalForm");
+
+    if (!form) return;
+
+    form.addEventListener("submit", event => {
       event.preventDefault();
 
       const input = $("#terminalInput");
+
+      if (!input) return;
+
       const command = input.value.trim();
 
       if (!command) return;
 
       runCommand(command);
+
       input.value = "";
     });
   }
 
-  function printTerminal(text) {
+  function terminalPrint(text) {
     const output = $("#terminalOutput");
 
     if (!output) return;
 
-    output.innerHTML += `\n${escapeHTML(text)}`;
+    output.textContent += `\n${text}`;
+
     output.scrollTop = output.scrollHeight;
   }
 
   function runCommand(raw) {
-    const command = raw.toLowerCase();
+    const command = raw
+      .trim()
+      .toLowerCase();
 
-    printTerminal(`\n> ${raw}`);
+    terminalPrint(`\n> ${raw}`);
 
     if (command === "help") {
-      printTerminal(
-`apps
+      terminalPrint(
+`help
+apps
 open <app>
 status
 version
-theme dark
-theme light
 clear
 about`
       );
@@ -269,63 +529,66 @@ about`
     }
 
     if (command === "apps") {
-      printTerminal(Object.keys(apps).join("\n"));
+      terminalPrint(
+        Object.keys(appDefinitions).join("\n")
+      );
       return;
     }
 
     if (command.startsWith("open ")) {
-      const name = command.slice(5).trim();
+      const name = command
+        .slice(5)
+        .trim();
 
-      if (apps[name]) {
+      if (appDefinitions[name]) {
         openApp(name);
       } else {
-        printTerminal(`Unknown app: ${name}`);
+        terminalPrint(
+          `Unknown application: ${name}`
+        );
       }
 
       return;
     }
 
     if (command === "status") {
-      printTerminal(
+      terminalPrint(
 `CORE: READY
 NETWORK: ${navigator.onLine ? "ONLINE" : "OFFLINE"}
 THREADS: ${navigator.hardwareConcurrency || "N/A"}
-MEMORY: ${navigator.deviceMemory ? navigator.deviceMemory + " GB" : "N/A"}`
+MEMORY: ${navigator.deviceMemory || "N/A"}`
       );
       return;
     }
 
     if (command === "version") {
-      printTerminal(`MINDOS ${VERSION}`);
-      return;
-    }
-
-    if (command === "theme dark") {
-      setTheme("dark");
-      printTerminal("Theme set to dark.");
-      return;
-    }
-
-    if (command === "theme light") {
-      setTheme("light");
-      printTerminal("Light theme is not enabled in this build.");
+      terminalPrint(`MINDOS ${VERSION}`);
       return;
     }
 
     if (command === "clear") {
-      $("#terminalOutput").textContent = "";
+      const output = $("#terminalOutput");
+
+      if (output) {
+        output.textContent = "";
+      }
+
       return;
     }
 
     if (command === "about") {
-      printTerminal(
-"MINDOS is a lightweight browser operating system."
+      terminalPrint(
+        "MINDOS — lightweight browser operating system."
       );
       return;
     }
 
-    printTerminal(`Command not found: ${raw}`);
+    terminalPrint(`Command not found: ${raw}`);
   }
+
+  /* =========================
+     FILES
+  ========================= */
 
   function renderFiles(root) {
     const files = [
@@ -337,73 +600,134 @@ MEMORY: ${navigator.deviceMemory ? navigator.deviceMemory + " GB" : "N/A"}`
 
     root.innerHTML = `
       <div class="file-list">
-        ${files.map(([name, type]) => `
+
+        ${files.map(file => `
           <div class="file">
+
             <div>
-              <strong>${escapeHTML(name)}</strong>
-              <small>${escapeHTML(type)}</small>
+              <strong>
+                ${escapeHTML(file[0])}
+              </strong>
+
+              <small>
+                ${escapeHTML(file[1])}
+              </small>
             </div>
+
             <span>›</span>
+
           </div>
         `).join("")}
+
       </div>
     `;
   }
 
+  /* =========================
+     NOTES
+  ========================= */
+
   function renderNotes(root) {
-    const saved = storage.get("mindos_notes", "");
+    const saved =
+      storage.get("mindos_notes", "");
 
     root.innerHTML = `
       <div class="notes">
-        <textarea id="notesArea" placeholder="Write something...">${escapeHTML(saved)}</textarea>
-        <button id="saveNotes" class="primary" type="button">Save note</button>
+
+        <textarea
+          id="notesArea"
+          placeholder="Write something..."
+        >${escapeHTML(saved)}</textarea>
+
+        <button
+          id="saveNotes"
+          class="primary"
+          type="button"
+        >
+          Save note
+        </button>
+
       </div>
     `;
 
-    $("#saveNotes").addEventListener("click", () => {
-      storage.set("mindos_notes", $("#notesArea").value);
+    const button = $("#saveNotes");
+
+    if (!button) return;
+
+    button.addEventListener("click", () => {
+      const area = $("#notesArea");
+
+      if (!area) return;
+
+      storage.set(
+        "mindos_notes",
+        area.value
+      );
+
       addTimeline("Note saved");
-      showToast("Note saved");
+
+      renderSmartActions();
+
+      toast("Note saved");
     });
   }
+
+  /* =========================
+     CALCULATOR
+  ========================= */
 
   function renderCalculator(root) {
     root.innerHTML = `
       <div class="calc">
-        <div id="calcDisplay" class="calc-display">0</div>
+
+        <div
+          id="calcDisplay"
+          class="calc-display"
+        >0</div>
 
         <div class="calc-grid">
-          <button type="button" data-calc="clear">C</button>
-          <button type="button" data-calc="back">⌫</button>
-          <button type="button" data-calc="operator">÷</button>
-          <button type="button" data-calc="operator">×</button>
 
-          <button type="button" data-calc="number">7</button>
-          <button type="button" data-calc="number">8</button>
-          <button type="button" data-calc="number">9</button>
-          <button type="button" data-calc="operator">−</button>
+          <button data-calc="clear" type="button">C</button>
+          <button data-calc="back" type="button">⌫</button>
+          <button data-calc="operator" type="button">÷</button>
+          <button data-calc="operator" type="button">×</button>
 
-          <button type="button" data-calc="number">4</button>
-          <button type="button" data-calc="number">5</button>
-          <button type="button" data-calc="number">6</button>
-          <button type="button" data-calc="operator">+</button>
+          <button data-calc="number" type="button">7</button>
+          <button data-calc="number" type="button">8</button>
+          <button data-calc="number" type="button">9</button>
+          <button data-calc="operator" type="button">−</button>
 
-          <button type="button" data-calc="number">1</button>
-          <button type="button" data-calc="number">2</button>
-          <button type="button" data-calc="number">3</button>
-          <button class="equal" type="button" data-calc="equal">=</button>
+          <button data-calc="number" type="button">4</button>
+          <button data-calc="number" type="button">5</button>
+          <button data-calc="number" type="button">6</button>
+          <button data-calc="operator" type="button">+</button>
 
-          <button type="button" data-calc="number">0</button>
-          <button type="button" data-calc="decimal">.</button>
+          <button data-calc="number" type="button">1</button>
+          <button data-calc="number" type="button">2</button>
+          <button data-calc="number" type="button">3</button>
+          <button
+            class="equal"
+            data-calc="equal"
+            type="button"
+          >=</button>
+
+          <button data-calc="number" type="button">0</button>
+          <button data-calc="decimal" type="button">.</button>
+
         </div>
       </div>
     `;
 
-    root.querySelectorAll("[data-calc]").forEach(button => {
-      button.addEventListener("click", () => {
-        calculatorInput(button.dataset.calc, button.textContent);
+    root
+      .querySelectorAll("[data-calc]")
+      .forEach(button => {
+        button.addEventListener("click", () => {
+          calculatorInput(
+            button.dataset.calc,
+            button.textContent
+          );
+        });
       });
-    });
 
     resetCalculator();
   }
@@ -415,7 +739,10 @@ MEMORY: ${navigator.deviceMemory ? navigator.deviceMemory + " GB" : "N/A"}`
     state.calcReset = false;
 
     const display = $("#calcDisplay");
-    if (display) display.textContent = "0";
+
+    if (display) {
+      display.textContent = "0";
+    }
   }
 
   function calculatorInput(action, value) {
@@ -434,7 +761,9 @@ MEMORY: ${navigator.deviceMemory ? navigator.deviceMemory + " GB" : "N/A"}`
           ? state.calcValue.slice(0, -1)
           : "0";
 
-      display.textContent = state.calcValue;
+      display.textContent =
+        state.calcValue;
+
       return;
     }
 
@@ -449,7 +778,9 @@ MEMORY: ${navigator.deviceMemory ? navigator.deviceMemory + " GB" : "N/A"}`
             : state.calcValue + value;
       }
 
-      display.textContent = state.calcValue;
+      display.textContent =
+        state.calcValue;
+
       return;
     }
 
@@ -461,19 +792,26 @@ MEMORY: ${navigator.deviceMemory ? navigator.deviceMemory + " GB" : "N/A"}`
         state.calcValue += ".";
       }
 
-      display.textContent = state.calcValue;
+      display.textContent =
+        state.calcValue;
+
       return;
     }
 
     if (action === "operator") {
-      const number = Number(state.calcValue);
+      const number =
+        Number(state.calcValue);
 
-      if (state.calcPrevious !== null && state.calcOperator) {
-        state.calcPrevious = calculate(
-          state.calcPrevious,
-          number,
-          state.calcOperator
-        );
+      if (
+        state.calcPrevious !== null &&
+        state.calcOperator
+      ) {
+        state.calcPrevious =
+          calculate(
+            state.calcPrevious,
+            number,
+            state.calcOperator
+          );
       } else {
         state.calcPrevious = number;
       }
@@ -485,76 +823,128 @@ MEMORY: ${navigator.deviceMemory ? navigator.deviceMemory + " GB" : "N/A"}`
         "+";
 
       state.calcReset = true;
-      display.textContent = state.calcPrevious;
+
+      display.textContent =
+        state.calcPrevious;
+
       return;
     }
 
     if (action === "equal") {
-      if (state.calcPrevious === null || !state.calcOperator) return;
+      if (
+        state.calcPrevious === null ||
+        !state.calcOperator
+      ) {
+        return;
+      }
 
-      const result = calculate(
-        state.calcPrevious,
-        Number(state.calcValue),
-        state.calcOperator
-      );
+      const result =
+        calculate(
+          state.calcPrevious,
+          Number(state.calcValue),
+          state.calcOperator
+        );
 
-      state.calcValue = String(result);
+      state.calcValue =
+        String(result);
+
       state.calcPrevious = null;
       state.calcOperator = null;
       state.calcReset = true;
 
-      display.textContent = state.calcValue;
+      display.textContent =
+        state.calcValue;
     }
   }
 
   function calculate(a, b, operator) {
-    if (operator === "+") return a + b;
-    if (operator === "-") return a - b;
-    if (operator === "*") return a * b;
+    switch (operator) {
+      case "+":
+        return a + b;
 
-    if (operator === "/") {
-      return b === 0 ? 0 : a / b;
+      case "-":
+        return a - b;
+
+      case "*":
+        return a * b;
+
+      case "/":
+        return b === 0 ? 0 : a / b;
+
+      default:
+        return b;
     }
-
-    return b;
   }
 
+  /* =========================
+     DIAGNOSTICS
+  ========================= */
+
   function renderMonitor(root) {
-    const connection = navigator.connection;
+    let connection = null;
+
+    try {
+      connection = navigator.connection;
+    } catch {}
 
     const rows = [
       ["MINDOS", VERSION],
+      ["CORE", "READY"],
       ["ONLINE", navigator.onLine ? "YES" : "NO"],
       ["CORES", navigator.hardwareConcurrency || "N/A"],
-      ["MEMORY", navigator.deviceMemory ? `${navigator.deviceMemory} GB` : "N/A"],
+      ["MEMORY", navigator.deviceMemory
+        ? `${navigator.deviceMemory} GB`
+        : "N/A"],
       ["LANGUAGE", navigator.language || "N/A"],
       ["PLATFORM", navigator.platform || "N/A"],
       ["SCREEN", `${screen.width} × ${screen.height}`],
       ["DPR", window.devicePixelRatio || 1],
       ["NETWORK", connection?.effectiveType || "N/A"],
       ["REDUCED MOTION",
-        matchMedia("(prefers-reduced-motion: reduce)").matches ? "YES" : "NO"]
+        matchMedia(
+          "(prefers-reduced-motion: reduce)"
+        ).matches ? "YES" : "NO"]
     ];
 
     root.innerHTML = `
       <div class="diag-grid">
-        ${rows.map(([name, value]) => `
+
+        ${rows.map(row => `
           <div class="diag">
-            <span>${escapeHTML(name)}</span>
-            <strong>${escapeHTML(value)}</strong>
+
+            <span>
+              ${escapeHTML(row[0])}
+            </span>
+
+            <strong>
+              ${escapeHTML(row[1])}
+            </strong>
+
           </div>
         `).join("")}
+
       </div>
     `;
   }
 
+  /* =========================
+     SETTINGS
+  ========================= */
+
   function renderSettings(root) {
-    const noteSize = new Blob([
-      storage.get("mindos_notes", "")
-    ]).size;
+    let notes = "";
+
+    try {
+      notes =
+        storage.get("mindos_notes", "") || "";
+    } catch {}
+
+    const noteSize =
+      new Blob([String(notes)]).size;
 
     root.innerHTML = `
       <div class="settings-list">
+
         <div class="setting">
           <strong>MINDOS version</strong>
           <small>${VERSION}</small>
@@ -562,135 +952,192 @@ MEMORY: ${navigator.deviceMemory ? navigator.deviceMemory + " GB" : "N/A"}`
 
         <div class="setting">
           <strong>Storage</strong>
-          <small>Notes: ${noteSize} bytes</small>
+          <small>
+            Notes: ${noteSize} bytes
+          </small>
         </div>
 
         <div class="setting">
           <strong>Theme</strong>
-          <small>Dark system interface</small>
+          <small>
+            Dark system interface
+          </small>
         </div>
 
         <div class="setting">
           <strong>Offline mode</strong>
-          <small>Core applications do not require a server.</small>
+          <small>
+            Core applications work locally.
+          </small>
         </div>
 
-        <button id="clearData" class="primary" type="button">
+        <button
+          id="clearData"
+          class="primary"
+          type="button"
+        >
           Reset local data
         </button>
+
       </div>
     `;
 
-    $("#clearData").addEventListener("click", () => {
-      const confirmed = confirm(
-        "Delete MINDOS notes, timeline and local settings?"
-      );
+    const clear = $("#clearData");
 
-      if (!confirmed) return;
+    if (!clear) return;
 
-      localStorage.removeItem("mindos_notes");
-      localStorage.removeItem("mindos_timeline");
+    clear.addEventListener("click", () => {
+      if (
+        !confirm(
+          "Delete MINDOS local data?"
+        )
+      ) {
+        return;
+      }
 
-      renderSettings(root);
+      storage.remove("mindos_notes");
+      storage.remove("mindos_timeline");
+
       renderTimeline();
+      renderSmartActions();
+      renderSettings(root);
 
-      showToast("Local data cleared");
+      toast("Local data cleared");
     });
   }
 
-  function setTheme(theme) {
-    storage.set("mindos_theme", theme);
-  }
-
-  function clearTimeline() {
-    storage.set("mindos_timeline", []);
-    renderTimeline();
-    showToast("Timeline cleared");
-  }
-
-  function renderSmartActions() {
-    const box = $("#smartActions");
-    const notes = storage.get("mindos_notes", "");
-
-    if (notes.trim()) {
-      box.classList.remove("hidden");
-
-      box.innerHTML = `
-        <div class="eyebrow">SMART ACTION</div>
-        <div class="smart-title">Your workspace is ready.</div>
-        <div class="smart-text">
-          You have a saved note. Open it and continue where you stopped.
-        </div>
-        <button class="smart-action" data-app="notes" type="button">
-          Open Notes →
-        </button>
-      `;
-
-      return;
-    }
-
-    box.classList.add("hidden");
-  }
-
-  document.addEventListener("click", event => {
-    const appButton = event.target.closest("[data-app]");
-
-    if (appButton) {
-      openApp(appButton.dataset.app);
-      return;
-    }
-
-    const actionButton = event.target.closest("[data-action]");
-
-    if (!actionButton) return;
-
-    const action = actionButton.dataset.action;
-
-    if (action === "home") showPage("home");
-    if (action === "apps") showPage("apps");
-    if (action === "clearTimeline") clearTimeline();
-  });
-
-  $("#backButton").addEventListener("click", closeApp);
-
-  window.addEventListener("online", updateNetwork);
-  window.addEventListener("offline", updateNetwork);
+  /* =========================
+     SERVICE WORKER
+  ========================= */
 
   async function registerServiceWorker() {
-    if (!("serviceWorker" in navigator)) return;
+    if (!("serviceWorker" in navigator)) {
+      return;
+    }
 
     try {
-      await navigator.serviceWorker.register("sw.js");
+      await navigator.serviceWorker.register("./sw.js");
     } catch (error) {
-      console.warn("Service Worker:", error);
+      console.warn(
+        "Service Worker unavailable:",
+        error
+      );
     }
   }
 
-  function init() {
-    updateClock();
-    updateNetwork();
-    updateMetrics();
-    updateGreeting();
-    renderTimeline();
-    renderSmartActions();
+  /* =========================
+     GLOBAL EVENTS
+  ========================= */
 
+  function setupEvents() {
+
+    document.addEventListener("click", event => {
+
+      const appButton =
+        event.target.closest("[data-app]");
+
+      if (appButton) {
+        openApp(
+          appButton.dataset.app
+        );
+        return;
+      }
+
+      const action =
+        event.target.closest("[data-action]");
+
+      if (!action) return;
+
+      const name =
+        action.dataset.action;
+
+      if (name === "home") {
+        showPage("home");
+        return;
+      }
+
+      if (name === "apps") {
+        showPage("apps");
+        return;
+      }
+
+      if (name === "clearTimeline") {
+        clearTimeline();
+      }
+    });
+
+    const back = $("#backButton");
+
+    if (back) {
+      back.addEventListener(
+        "click",
+        closeApp
+      );
+    }
+
+    window.addEventListener(
+      "online",
+      updateNetwork
+    );
+
+    window.addEventListener(
+      "offline",
+      updateNetwork
+    );
+
+    document.addEventListener(
+      "keydown",
+      event => {
+        if (
+          event.key === "Escape" &&
+          state.currentApp
+        ) {
+          closeApp();
+        }
+      }
+    );
+  }
+
+  /* =========================
+     START
+  ========================= */
+
+  function start() {
+
+    // Подключаем все кнопки.
+    setupEvents();
+
+    // Сразу убираем экран INITIALIZING CORE.
+    finishBoot();
+
+    // После первого кадра запускаем второстепенные функции.
+    requestAnimationFrame(() => {
+      safeBoot();
+    });
+
+    // Часы обновляем только раз в 30 секунд.
+    // Это намного дешевле постоянного обновления.
     setInterval(updateClock, 30000);
-
-    $("#boot").classList.add("hidden");
-    $("#app").classList.remove("hidden");
-
-    $("#jsStatus").textContent = "SYSTEM READY";
-    $("#coreStatus").textContent = "CORE READY";
-    $("#readyIndicator").textContent = "● READY";
-
-    addTimeline("MINDOS started");
-
-    registerServiceWorker();
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init, { once: true });
+  /* =========================
+     DOM READY
+  ========================= */
+
+  if (
+    document.readyState === "loading"
+  ) {
+
+    document.addEventListener(
+      "DOMContentLoaded",
+      start,
+      { once: true }
+    );
+
   } else {
-    init();
+
+    start();
+
   }
+
 })();
