@@ -1,10 +1,20 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>SoulGlaz</title>
+
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    >
 
     <link rel="stylesheet" href="style.css">
 </head>
@@ -12,6 +22,7 @@
 <body>
 
     <header class="header">
+
         <div class="logo">
             ◉ SOUL<span>GLAZ</span>
         </div>
@@ -20,56 +31,86 @@
             <span class="dot"></span>
             LIVE
         </div>
-    </header>
 
-    <main class="radar">
-
-        <div class="radar-ring ring-1"></div>
-        <div class="radar-ring ring-2"></div>
-        <div class="radar-ring ring-3"></div>
-
-        <div class="cross horizontal"></div>
-        <div class="cross vertical"></div>
-
-        <div class="radar-sweep"></div>
-
-        <div class="object plane plane-1">✈</div>
-        <div class="object plane plane-2">✈</div>
-        <div class="object helicopter">🚁</div>
-        <div class="object ship">▲</div>
-
-        <div class="center">
-            ●
+        <div id="objectCount">
+            OBJECTS: 0
         </div>
 
-    </main>
+    </header>
+
 
     <aside class="panel">
 
-        <h2>SOULGLAZ</h2>
+        <h2>SOULGLAZ RADAR</h2>
 
         <div class="category">
-            <div>✈ AIRCRAFT</div>
-            <strong>1,248</strong>
+            <span>✈ AIRCRAFT</span>
+            <strong id="aircraftCount">0</strong>
         </div>
 
         <div class="category">
-            <div>🚁 HELICOPTERS</div>
-            <strong>183</strong>
+            <span>🚁 ROTORCRAFT</span>
+            <strong id="helicopterCount">0</strong>
         </div>
 
         <div class="category">
-            <div>🚢 VESSELS</div>
-            <strong>4,821</strong>
+            <span>🚢 VESSELS</span>
+            <strong>—</strong>
         </div>
 
-        <button class="camera-button">
-            ◉ OPEN CAMERA
-        </button>
+        <div class="category">
+            <span>📷 VISION</span>
+            <strong>OFFLINE</strong>
+        </div>
+
+        <div class="info">
+
+            <div>DATA SOURCE</div>
+
+            <strong>
+                OPENSKY NETWORK
+            </strong>
+
+        </div>
 
     </aside>
+
+
+    <main id="map"></main>
+
+
+    <div class="coordinates">
+
+        SOULGLAZ<br>
+
+        <span id="mapPosition">
+            GLOBAL MAP
+        </span>
+
+    </div>
+
+
+    <div class="legend">
+
+        <span>
+            <i class="air"></i>
+            AIR
+        </span>
+
+        <span>
+            <i class="you"></i>
+            YOU
+        </span>
+
+    </div>
+
+
+    <script
+        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+    </script>
 
     <script src="app.js"></script>
 
 </body>
+
 </html>
