@@ -1,0 +1,10 @@
+{
+  "name": "MINDOS",
+  "short_name": "MINDOS",
+  "description": "Lightweight browser operating system",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#080a0f",
+  "theme_color": "#090b10",
+  "icons": []
+}
