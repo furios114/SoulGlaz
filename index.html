@@ -2,116 +2,141 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>SOULGLAZ</title>
-
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  >
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#08090d">
+  <title>MINDOS</title>
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-  <header>
-    <div class="logo">SOULGLAZ</div>
+  <div class="os">
 
-    <div class="status">
-      <span class="status-dot"></span>
-      LIVE
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">M</span>
+        <span>MINDOS</span>
+      </div>
+
+      <div class="system-status">
+        <span class="online-dot"></span>
+        SYSTEM ONLINE
+      </div>
+
+      <div id="clock">00:00</div>
+    </header>
+
+
+    <!-- DESKTOP -->
+    <main id="desktop">
+
+      <div class="wallpaper-glow"></div>
+
+      <div class="welcome">
+        <div class="welcome-small">WELCOME BACK</div>
+        <div class="welcome-title">MINDOS</div>
+        <div class="welcome-line"></div>
+        <div class="welcome-sub">
+          PERSONAL DIGITAL ENVIRONMENT
+        </div>
+      </div>
+
+
+      <!-- APP ICONS -->
+
+      <div class="apps">
+
+        <button class="app-icon" data-app="terminal">
+          <span class="icon">⌘</span>
+          <span>Terminal</span>
+        </button>
+
+        <button class="app-icon" data-app="files">
+          <span class="icon">▣</span>
+          <span>Files</span>
+        </button>
+
+        <button class="app-icon" data-app="notes">
+          <span class="icon">▤</span>
+          <span>Notes</span>
+        </button>
+
+        <button class="app-icon" data-app="calculator">
+          <span class="icon">＋</span>
+          <span>Calculator</span>
+        </button>
+
+        <button class="app-icon" data-app="monitor">
+          <span class="icon">⌁</span>
+          <span>Monitor</span>
+        </button>
+
+        <button class="app-icon" data-app="settings">
+          <span class="icon">⚙</span>
+          <span>Settings</span>
+        </button>
+
+      </div>
+
+
+      <!-- WINDOWS -->
+
+      <div id="windows"></div>
+
+    </main>
+
+
+    <!-- BOTTOM DOCK -->
+
+    <nav class="dock">
+
+      <button id="homeButton" class="dock-button active">
+        <span>⌂</span>
+        <small>HOME</small>
+      </button>
+
+      <button id="appsButton" class="dock-button">
+        <span>▦</span>
+        <small>APPS</small>
+      </button>
+
+      <button id="terminalButton" class="dock-button">
+        <span>⌘</span>
+        <small>TERM</small>
+      </button>
+
+      <button id="settingsButton" class="dock-button">
+        <span>⚙</span>
+        <small>SYSTEM</small>
+      </button>
+
+    </nav>
+
+
+    <!-- APP MENU -->
+
+    <div id="appMenu" class="app-menu">
+
+      <div class="menu-header">
+        <span>APPLICATIONS</span>
+        <button id="closeMenu">×</button>
+      </div>
+
+      <div class="menu-grid">
+
+        <button data-app="terminal">⌘<small>Terminal</small></button>
+        <button data-app="files">▣<small>Files</small></button>
+        <button data-app="notes">▤<small>Notes</small></button>
+        <button data-app="calculator">＋<small>Calculator</small></button>
+        <button data-app="monitor">⌁<small>Monitor</small></button>
+        <button data-app="settings">⚙<small>Settings</small></button>
+
+      </div>
+
     </div>
-  </header>
 
-  <main>
-
-    <section class="radar-section">
-      <div class="section-title">RADAR</div>
-
-      <div id="map"></div>
-
-      <div class="radar-info">
-        <span>OBJECTS: <b id="objectCount">0</b></span>
-        <span>LAT: <b id="lat">0.000000</b></span>
-        <span>LON: <b id="lon">0.000000</b></span>
-      </div>
-    </section>
-
-
-    <section class="vision-section">
-
-      <div class="section-title">
-        VISION
-        <span id="visionStatus">OFFLINE</span>
-      </div>
-
-      <div class="camera-container">
-
-        <video
-          id="camera"
-          autoplay
-          playsinline
-          muted
-        ></video>
-
-        <canvas id="visionCanvas"></canvas>
-
-        <div id="cameraMessage">
-          CAMERA OFFLINE
-        </div>
-
-      </div>
-
-      <div class="vision-controls">
-
-        <button id="startCamera">
-          START CAMERA
-        </button>
-
-        <button id="switchCamera">
-          SWITCH CAMERA
-        </button>
-
-      </div>
-
-      <div class="vision-stats">
-
-        <div>
-          <span>PEOPLE</span>
-          <b id="peopleCount">0</b>
-        </div>
-
-        <div>
-          <span>OBJECTS</span>
-          <b id="detectedCount">0</b>
-        </div>
-
-      </div>
-
-      <div class="detections">
-        <div class="detection-title">
-          DETECTED
-        </div>
-
-        <div id="detectionList">
-          Nothing detected
-        </div>
-      </div>
-
-    </section>
-
-  </main>
-
-
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-  <!-- TensorFlow -->
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-
-  <!-- COCO-SSD object detection model -->
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+  </div>
 
   <script src="app.js"></script>
 
