@@ -1,423 +1,198 @@
 * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
+  box-sizing: border-box;
 }
 
-
-html,
 body {
-
-    width: 100%;
-    height: 100%;
-
-    overflow: hidden;
-
-    background: #020805;
-
-    color: #d7ffe5;
-
-    font-family:
-        Arial,
-        Helvetica,
-        sans-serif;
+  margin: 0;
+  background: #020604;
+  color: #00ff66;
+  font-family: monospace;
 }
 
-
-.header {
-
-    position: fixed;
-
-    z-index: 1000;
-
-    top: 0;
-    left: 0;
-
-    width: 100%;
-    height: 64px;
-
-    display: flex;
-    align-items: center;
-
-    padding: 0 22px;
-
-    background:
-        rgba(2, 10, 5, .96);
-
-    border-bottom:
-        1px solid #174b29;
+header {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  border-bottom: 1px solid #00ff6640;
+  background: #030a06;
 }
-
 
 .logo {
-
-    font-size: 20px;
-
-    font-weight: 800;
-
-    letter-spacing: 4px;
-
-    color: #d9ffe6;
+  font-size: 22px;
+  font-weight: bold;
+  letter-spacing: 4px;
 }
-
-
-.logo span {
-
-    color: #38ff76;
-
-}
-
 
 .status {
-
-    margin-left: 35px;
-
-    font-size: 10px;
-
-    letter-spacing: 3px;
-
-    color: #42ff82;
-
+  font-size: 13px;
 }
 
-
-.dot {
-
-    display: inline-block;
-
-    width: 7px;
-    height: 7px;
-
-    margin-right: 7px;
-
-    border-radius: 50%;
-
-    background: #42ff82;
-
-    box-shadow:
-        0 0 8px #42ff82;
-
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: #00ff66;
+  box-shadow: 0 0 10px #00ff66;
 }
 
-
-#objectCount {
-
-    margin-left: auto;
-
-    font-size: 10px;
-
-    color: #638c70;
-
-    letter-spacing: 1px;
-
+main {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  padding: 15px;
 }
 
+.radar-section,
+.vision-section {
+  min-width: 0;
+}
+
+.section-title {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  border: 1px solid #00ff6630;
+  background: #041008;
+  font-size: 14px;
+  letter-spacing: 2px;
+}
+
+#visionStatus {
+  font-size: 11px;
+}
 
 #map {
-
-    position: absolute;
-
-    top: 64px;
-    left: 0;
-
-    width: 100%;
-    height: calc(100% - 64px);
-
-    background: #06100a;
+  height: 500px;
+  border: 1px solid #00ff6640;
 }
 
-
-.leaflet-tile {
-
-    filter:
-        brightness(.55)
-        contrast(1.25)
-        saturate(.7)
-        hue-rotate(80deg);
+.radar-info {
+  display: flex;
+  gap: 20px;
+  padding: 10px;
+  border: 1px solid #00ff6630;
+  border-top: none;
+  font-size: 11px;
 }
 
-
-.leaflet-control-attribution {
-
-    background:
-        rgba(0, 10, 5, .8) !important;
-
-    color: #5f8f6d !important;
-
-    font-size: 9px;
-
+.camera-container {
+  position: relative;
+  width: 100%;
+  height: 500px;
+  overflow: hidden;
+  background: #000;
+  border: 1px solid #00ff6640;
 }
 
-
-.leaflet-control-attribution a {
-
-    color: #70c987 !important;
-
+#camera {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
 }
 
-
-.panel {
-
-    position: fixed;
-
-    z-index: 900;
-
-    top: 64px;
-    left: 0;
-    bottom: 0;
-
-    width: 245px;
-
-    padding: 25px 20px;
-
-    background:
-        rgba(2, 9, 5, .94);
-
-    border-right:
-        1px solid #174b29;
-
+#visionCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
 
-
-.panel h2 {
-
-    margin-bottom: 25px;
-
-    color: #42ff82;
-
-    font-size: 13px;
-
-    letter-spacing: 3px;
-
+#cameraMessage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #00ff66;
+  background: #020604;
+  font-size: 14px;
+  letter-spacing: 2px;
 }
 
-
-.category {
-
-    display: flex;
-
-    justify-content: space-between;
-
-    align-items: center;
-
-    padding: 15px 5px;
-
-    border-bottom:
-        1px solid #102d1b;
-
-    color: #648a6e;
-
-    font-size: 10px;
-
+.vision-controls {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
 }
 
-
-.category strong {
-
-    color: #c8ffda;
-
+button {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid #00ff66;
+  background: #031007;
+  color: #00ff66;
+  font-family: monospace;
+  cursor: pointer;
 }
 
-
-.info {
-
-    margin-top: 35px;
-
-    padding-top: 18px;
-
-    border-top:
-        1px solid #173c23;
-
-    font-size: 9px;
-
-    line-height: 2;
-
-    color: #55765e;
-
+button:hover {
+  background: #00ff6620;
 }
 
-
-.info strong {
-
-    color: #42d96f;
-
+.vision-stats {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
 }
 
-
-.coordinates {
-
-    position: fixed;
-
-    z-index: 800;
-
-    right: 18px;
-    bottom: 18px;
-
-    padding: 10px 14px;
-
-    background:
-        rgba(2, 9, 5, .9);
-
-    border:
-        1px solid #174b29;
-
-    color: #5d8b68;
-
-    font-size: 9px;
-
-    line-height: 1.8;
-
-    letter-spacing: 1px;
-
+.vision-stats div {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid #00ff6630;
+  background: #030a06;
 }
 
-
-.legend {
-
-    position: fixed;
-
-    z-index: 800;
-
-    left: 265px;
-    bottom: 18px;
-
-    display: flex;
-
-    gap: 18px;
-
-    padding: 9px 13px;
-
-    background:
-        rgba(2, 9, 5, .9);
-
-    border:
-        1px solid #174b29;
-
-    color: #679172;
-
-    font-size: 9px;
-
+.vision-stats span {
+  display: block;
+  font-size: 10px;
+  opacity: 0.7;
 }
 
-
-.legend i {
-
-    display: inline-block;
-
-    width: 7px;
-    height: 7px;
-
-    margin-right: 5px;
-
-    border-radius: 50%;
-
+.vision-stats b {
+  display: block;
+  margin-top: 5px;
+  font-size: 22px;
 }
 
-
-.air {
-
-    background: #42ff82;
-
-    box-shadow:
-        0 0 8px #42ff82;
-
+.detections {
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid #00ff6630;
+  background: #030a06;
 }
 
-
-.you {
-
-    background: #fff;
-
+.detection-title {
+  margin-bottom: 8px;
+  font-size: 11px;
+  letter-spacing: 2px;
 }
 
-
-/*
-    AIRCRAFT MARKER
-*/
-
-.aircraft-marker {
-
-    background: transparent;
-
-    border: none;
-
+.detection-item {
+  padding: 5px 0;
+  border-bottom: 1px solid #00ff6615;
+  font-size: 12px;
 }
 
-
-.aircraft {
-
-    width: 26px;
-    height: 26px;
-
-    display: flex;
-
-    justify-content: center;
-
-    align-items: center;
-
-    color: #42ff82;
-
-    font-size: 20px;
-
-    text-shadow:
-        0 0 5px #42ff82,
-        0 0 12px #42ff82;
-
+.leaflet-container {
+  background: #001006;
 }
 
+@media (max-width: 900px) {
 
-.aircraft::after {
+  main {
+    grid-template-columns: 1fr;
+  }
 
-    content: "";
-
-    position: absolute;
-
-    width: 5px;
-    height: 5px;
-
-    border-radius: 50%;
-
-    background: #42ff82;
-
-    box-shadow:
-        0 0 10px #42ff82;
-
-}
-
-
-.aircraft-popup {
-
-    color: #baffc9;
-
-    background: #041008;
-
-}
-
-
-@media (max-width: 700px) {
-
-    .panel {
-
-        width: 180px;
-
-    }
-
-    .logo {
-
-        font-size: 15px;
-
-    }
-
-    .status {
-
-        margin-left: 15px;
-
-    }
-
-    .legend {
-
-        left: 195px;
-
-    }
-
+  #map,
+  .camera-container {
+    height: 400px;
+  }
 }
