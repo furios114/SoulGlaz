@@ -1,474 +1,870 @@
-// ===============================
-// SOULGLAZ
-// RADAR + VISION
-// ===============================
+// ==========================================
+// MINDOS
+// ==========================================
 
 
-// ===============================
-// RADAR
-// ===============================
+// ==========================================
+// CLOCK
+// ==========================================
 
-const map = L.map("map").setView([59.93, 30.31], 7);
-
-L.tileLayer(
-  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-  {
-    attribution: "&copy; OpenStreetMap"
-  }
-).addTo(map);
+const clock =
+  document.getElementById("clock");
 
 
-const aircraftMarkers = {};
+function updateClock() {
 
-const objectCountElement =
-  document.getElementById("objectCount");
+  const now =
+    new Date();
 
-const latElement =
-  document.getElementById("lat");
+  clock.textContent =
+    now.toLocaleTimeString(
+      "ru-RU",
+      {
+        hour: "2-digit",
+        minute: "2-digit"
+      }
+    );
 
-const lonElement =
-  document.getElementById("lon");
+}
 
 
-async function loadAircraft() {
+updateClock();
 
-  try {
+setInterval(
+  updateClock,
+  1000
+);
 
-    const url =
-      "https://opensky-network.org/api/states/all" +
-      "?lamin=35&lomin=-10&lamax=70&lomax=40";
 
-    const response = await fetch(url);
+// ==========================================
+// WINDOWS
+// ==========================================
 
-    if (!response.ok) {
-      throw new Error("OpenSky HTTP " + response.status);
+const windows =
+  document.getElementById("windows");
+
+
+let windowCounter = 0;
+
+
+function createWindow(
+  title,
+  content
+) {
+
+  windowCounter++;
+
+  const id =
+    "window-" +
+    windowCounter;
+
+
+  const win =
+    document.createElement("div");
+
+  win.className =
+    "window";
+
+  win.id =
+    id;
+
+
+  win.innerHTML = `
+
+    <div class="window-header">
+
+      <span class="window-title">
+        ${title}
+      </span>
+
+      <button
+        class="window-close"
+        data-close="${id}">
+        ×
+      </button>
+
+    </div>
+
+    <div class="window-content">
+      ${content}
+    </div>
+
+  `;
+
+
+  windows.appendChild(win);
+
+
+  win.querySelector(
+    ".window-close"
+  ).addEventListener(
+    "click",
+    () => {
+
+      win.remove();
+
     }
+  );
 
-    const data = await response.json();
 
-    const states = data.states || [];
+  return win;
 
-    const currentAircraft = new Set();
+}
 
-    states.forEach(state => {
 
-      const icao = state[0];
-      const callsign = (state[1] || "UNKNOWN").trim();
+// ==========================================
+// TERMINAL
+// ==========================================
 
-      const longitude = state[5];
-      const latitude = state[6];
+function openTerminal() {
 
-      const altitude = state[7];
-      const velocity = state[9];
-      const heading = state[10];
+  const win =
+    createWindow(
+      "TERMINAL",
+      `
+
+      <div class="terminal">
+
+        <div
+          class="terminal-output"
+          id="terminalOutput">
+
+          <div class="green">
+            MINDOS TERMINAL v1.0
+          </div>
+
+          <div>
+            Type "help" to see commands.
+          </div>
+
+          <br>
+
+        </div>
+
+        <div class="terminal-input-line">
+
+          <span class="terminal-prompt">
+            mind@os:~$
+          </span>
+
+          <input
+            class="terminal-input"
+            id="terminalInput"
+            autocomplete="off"
+            spellcheck="false">
+
+        </div>
+
+      </div>
+
+      `
+    );
+
+
+  const input =
+    win.querySelector(
+      "#terminalInput"
+    );
+
+  const output =
+    win.querySelector(
+      "#terminalOutput"
+    );
+
+
+  input.focus();
+
+
+  input.addEventListener(
+    "keydown",
+    event => {
 
       if (
-        longitude === null ||
-        latitude === null
+        event.key !== "Enter"
       ) {
         return;
       }
 
-      currentAircraft.add(icao);
 
-      const popup = `
-        <b>${callsign}</b><br>
-        ICAO: ${icao}<br>
-        Country: ${state[2] || "UNKNOWN"}<br>
-        Altitude: ${Math.round(altitude || 0)} m<br>
-        Speed: ${Math.round((velocity || 0) * 3.6)} km/h<br>
-        Heading: ${Math.round(heading || 0)}°
-      `;
+      const command =
+        input.value
+          .trim()
+          .toLowerCase();
 
-      if (!aircraftMarkers[icao]) {
 
-        const marker =
-          L.circleMarker(
-            [latitude, longitude],
-            {
-              radius: 6,
-              color: "#00ff66",
-              fillColor: "#00ff66",
-              fillOpacity: 0.8
-            }
-          )
-          .addTo(map)
-          .bindPopup(popup);
+      input.value = "";
 
-        aircraftMarkers[icao] = marker;
 
-      } else {
-
-        aircraftMarkers[icao]
-          .setLatLng([latitude, longitude])
-          .setPopupContent(popup);
-
-      }
-
-    });
-
-
-    Object.keys(aircraftMarkers).forEach(icao => {
-
-      if (!currentAircraft.has(icao)) {
-
-        map.removeLayer(
-          aircraftMarkers[icao]
-        );
-
-        delete aircraftMarkers[icao];
-
-      }
-
-    });
-
-
-    objectCountElement.textContent =
-      Object.keys(aircraftMarkers).length;
-
-  } catch (error) {
-
-    console.error(
-      "Aircraft API error:",
-      error
-    );
-
-  }
-
-}
-
-
-loadAircraft();
-
-setInterval(
-  loadAircraft,
-  30000
-);
-
-
-map.on("mousemove", event => {
-
-  latElement.textContent =
-    event.latlng.lat.toFixed(6);
-
-  lonElement.textContent =
-    event.latlng.lng.toFixed(6);
-
-});
-
-
-// ===============================
-// VISION
-// ===============================
-
-const video =
-  document.getElementById("camera");
-
-const canvas =
-  document.getElementById("visionCanvas");
-
-const ctx =
-  canvas.getContext("2d");
-
-const startButton =
-  document.getElementById("startCamera");
-
-const switchButton =
-  document.getElementById("switchCamera");
-
-const cameraMessage =
-  document.getElementById("cameraMessage");
-
-const visionStatus =
-  document.getElementById("visionStatus");
-
-const peopleCount =
-  document.getElementById("peopleCount");
-
-const detectedCount =
-  document.getElementById("detectedCount");
-
-const detectionList =
-  document.getElementById("detectionList");
-
-
-let cameraStream = null;
-
-let currentCamera = "environment";
-
-let model = null;
-
-let detecting = false;
-
-
-// ===============================
-// START CAMERA
-// ===============================
-
-async function startCamera() {
-
-  try {
-
-    if (cameraStream) {
-
-      cameraStream
-        .getTracks()
-        .forEach(track => track.stop());
-
-    }
-
-
-    cameraStream =
-      await navigator.mediaDevices.getUserMedia({
-
-        video: {
-          facingMode: currentCamera,
-          width: {
-            ideal: 1280
-          },
-          height: {
-            ideal: 720
-          }
-        },
-
-        audio: false
-
-      });
-
-
-    video.srcObject =
-      cameraStream;
-
-    cameraMessage.style.display =
-      "none";
-
-    visionStatus.textContent =
-      "LOADING MODEL";
-
-
-    if (!model) {
-
-      model =
-        await cocoSsd.load();
-
-    }
-
-
-    visionStatus.textContent =
-      "ONLINE";
-
-    detecting = true;
-
-    detectObjects();
-
-  } catch (error) {
-
-    console.error(error);
-
-    visionStatus.textContent =
-      "ERROR";
-
-    cameraMessage.style.display =
-      "flex";
-
-    cameraMessage.textContent =
-      "CAMERA ACCESS DENIED";
-
-  }
-
-}
-
-
-// ===============================
-// SWITCH CAMERA
-// ===============================
-
-switchButton.addEventListener(
-  "click",
-  async () => {
-
-    currentCamera =
-      currentCamera === "environment"
-        ? "user"
-        : "environment";
-
-    await startCamera();
-
-  }
-);
-
-
-// ===============================
-// START BUTTON
-// ===============================
-
-startButton.addEventListener(
-  "click",
-  startCamera
-);
-
-
-// ===============================
-// OBJECT DETECTION
-// ===============================
-
-async function detectObjects() {
-
-  if (!detecting || !model) {
-    return;
-  }
-
-  if (
-    video.readyState <
-    HTMLMediaElement.HAVE_ENOUGH_DATA
-  ) {
-
-    requestAnimationFrame(
-      detectObjects
-    );
-
-    return;
-
-  }
-
-
-  canvas.width =
-    video.videoWidth;
-
-  canvas.height =
-    video.videoHeight;
-
-
-  const predictions =
-    await model.detect(video);
-
-
-  ctx.clearRect(
-    0,
-    0,
-    canvas.width,
-    canvas.height
-  );
-
-
-  let people = 0;
-
-  const detectedNames = [];
-
-
-  predictions.forEach(
-    prediction => {
-
-      const [
-        x,
-        y,
-        width,
-        height
-      ] = prediction.bbox;
-
-
-      const score =
-        prediction.score;
-
-
-      if (score < 0.55) {
+      if (!command) {
         return;
       }
 
 
-      const name =
-        prediction.class;
+      const line =
+        document.createElement("div");
+
+      line.textContent =
+        "mind@os:~$ " +
+        command;
+
+      output.appendChild(line);
 
 
-      if (name === "person") {
-        people++;
+      let result = "";
+
+
+      if (
+        command === "help"
+      ) {
+
+        result =
+          "Commands: help, clear, date, about, status";
+
+      }
+
+      else if (
+        command === "clear"
+      ) {
+
+        output.innerHTML = "";
+
+        return;
+
+      }
+
+      else if (
+        command === "date"
+      ) {
+
+        result =
+          new Date()
+            .toLocaleString(
+              "ru-RU"
+            );
+
+      }
+
+      else if (
+        command === "about"
+      ) {
+
+        result =
+          "MINDOS — personal digital environment.";
+
+      }
+
+      else if (
+        command === "status"
+      ) {
+
+        result =
+          "SYSTEM ONLINE / ALL SYSTEMS NOMINAL";
+
+      }
+
+      else {
+
+        result =
+          "Command not found: " +
+          command;
+
       }
 
 
-      detectedNames.push(
-        `${name} ${Math.round(score * 100)}%`
+      const resultElement =
+        document.createElement("div");
+
+      resultElement.className =
+        "green";
+
+      resultElement.textContent =
+        result;
+
+      output.appendChild(
+        resultElement
       );
 
 
-      // BOX
+      output.scrollTop =
+        output.scrollHeight;
 
-      ctx.strokeStyle =
-        "#00ff66";
+    }
+  );
 
-      ctx.lineWidth = 3;
+}
 
-      ctx.strokeRect(
-        x,
-        y,
-        width,
-        height
+
+// ==========================================
+// FILES
+// ==========================================
+
+function openFiles() {
+
+  createWindow(
+    "FILES",
+    `
+
+    <div class="file-grid">
+
+      <div class="file">
+        <div class="file-icon">▰</div>
+        <div class="file-name">Documents</div>
+      </div>
+
+      <div class="file">
+        <div class="file-icon">▰</div>
+        <div class="file-name">Downloads</div>
+      </div>
+
+      <div class="file">
+        <div class="file-icon">▰</div>
+        <div class="file-name">Projects</div>
+      </div>
+
+      <div class="file">
+        <div class="file-icon">▰</div>
+        <div class="file-name">Pictures</div>
+      </div>
+
+      <div class="file">
+        <div class="file-icon">▰</div>
+        <div class="file-name">System</div>
+      </div>
+
+      <div class="file">
+        <div class="file-icon">▰</div>
+        <div class="file-name">MINDOS</div>
+      </div>
+
+    </div>
+
+    `
+  );
+
+}
+
+
+// ==========================================
+// NOTES
+// ==========================================
+
+function openNotes() {
+
+  const saved =
+    localStorage.getItem(
+      "mindos_notes"
+    ) || "";
+
+
+  const win =
+    createWindow(
+      "NOTES",
+      `
+
+      <textarea
+        class="notes-area"
+        placeholder="Начните писать...">${saved}</textarea>
+
+      `
+    );
+
+
+  const textarea =
+    win.querySelector(
+      ".notes-area"
+    );
+
+
+  textarea.addEventListener(
+    "input",
+    () => {
+
+      localStorage.setItem(
+        "mindos_notes",
+        textarea.value
       );
 
+    }
+  );
 
-      // LABEL
-
-      const label =
-        `${name} ${Math.round(score * 100)}%`;
-
-      ctx.font =
-        "16px monospace";
+}
 
 
-      const textWidth =
-        ctx.measureText(label).width;
+// ==========================================
+// CALCULATOR
+// ==========================================
+
+function openCalculator() {
+
+  const win =
+    createWindow(
+      "CALCULATOR",
+      `
+
+      <div class="calculator">
+
+        <div
+          class="calc-display"
+          id="calcDisplay">
+          0
+        </div>
+
+        <div class="calc-grid">
+
+          <button data-calc="C">C</button>
+          <button data-calc="(">(</button>
+          <button data-calc=")">)</button>
+          <button data-calc="/">÷</button>
+
+          <button data-calc="7">7</button>
+          <button data-calc="8">8</button>
+          <button data-calc="9">9</button>
+          <button data-calc="*">×</button>
+
+          <button data-calc="4">4</button>
+          <button data-calc="5">5</button>
+          <button data-calc="6">6</button>
+          <button data-calc="-">−</button>
+
+          <button data-calc="1">1</button>
+          <button data-calc="2">2</button>
+          <button data-calc="3">3</button>
+          <button data-calc="+">+</button>
+
+          <button data-calc="0">0</button>
+          <button data-calc=".">.</button>
+          <button data-calc="=" class="equal">=</button>
+
+        </div>
+
+      </div>
+
+      `
+    );
 
 
-      ctx.fillStyle =
-        "#00ff66";
+  const display =
+    win.querySelector(
+      "#calcDisplay"
+    );
 
-      ctx.fillRect(
-        x,
-        Math.max(0, y - 24),
-        textWidth + 10,
-        24
+
+  let expression = "";
+
+
+  win.querySelectorAll(
+    "[data-calc]"
+  ).forEach(
+    button => {
+
+      button.addEventListener(
+        "click",
+        () => {
+
+          const value =
+            button.dataset.calc;
+
+
+          if (value === "C") {
+
+            expression = "";
+
+            display.textContent =
+              "0";
+
+            return;
+
+          }
+
+
+          if (value === "=") {
+
+            try {
+
+              if (
+                !/^[0-9+\-*/().\s]+$/
+                  .test(expression)
+              ) {
+
+                throw new Error();
+
+              }
+
+
+              expression =
+                String(
+                  Function(
+                    "return " +
+                    expression
+                  )()
+                );
+
+
+              display.textContent =
+                expression;
+
+            } catch {
+
+              expression = "";
+
+              display.textContent =
+                "ERROR";
+
+            }
+
+            return;
+
+          }
+
+
+          expression +=
+            value;
+
+          display.textContent =
+            expression;
+
+        }
       );
 
+    }
+  );
 
-      ctx.fillStyle =
-        "#000";
+}
 
-      ctx.fillText(
-        label,
-        x + 5,
-        Math.max(17, y - 7)
+
+// ==========================================
+// SYSTEM MONITOR
+// ==========================================
+
+function openMonitor() {
+
+  createWindow(
+    "SYSTEM MONITOR",
+    `
+
+    <div class="monitor-card">
+
+      <div class="monitor-card-header">
+        <span>CPU</span>
+        <span>42%</span>
+      </div>
+
+      <div class="progress">
+        <span style="width:42%"></span>
+      </div>
+
+    </div>
+
+
+    <div class="monitor-card">
+
+      <div class="monitor-card-header">
+        <span>MEMORY</span>
+        <span>61%</span>
+      </div>
+
+      <div class="progress">
+        <span style="width:61%"></span>
+      </div>
+
+    </div>
+
+
+    <div class="monitor-card">
+
+      <div class="monitor-card-header">
+        <span>STORAGE</span>
+        <span>28%</span>
+      </div>
+
+      <div class="progress">
+        <span style="width:28%"></span>
+      </div>
+
+    </div>
+
+
+    <div class="monitor-card">
+
+      <div class="monitor-card-header">
+        <span>NETWORK</span>
+        <span>ONLINE</span>
+      </div>
+
+      <div class="progress">
+        <span style="width:78%"></span>
+      </div>
+
+    </div>
+
+    `
+  );
+
+}
+
+
+// ==========================================
+// SETTINGS
+// ==========================================
+
+function openSettings() {
+
+  createWindow(
+    "SETTINGS",
+    `
+
+    <div class="setting">
+
+      <div class="setting-name">
+        System
+      </div>
+
+      <div class="setting-value">
+        MINDOS 1.0
+      </div>
+
+    </div>
+
+
+    <div class="setting">
+
+      <div class="setting-name">
+        Interface
+      </div>
+
+      <div class="setting-value">
+        DARK
+      </div>
+
+    </div>
+
+
+    <div class="setting">
+
+      <div class="setting-name">
+        Accent
+      </div>
+
+      <div class="setting-value">
+        LIME
+      </div>
+
+    </div>
+
+
+    <div class="setting">
+
+      <div class="setting-name">
+        Storage
+      </div>
+
+      <div class="setting-value">
+        LOCAL
+      </div>
+
+    </div>
+
+
+    <div class="setting">
+
+      <div class="setting-name">
+        Version
+      </div>
+
+      <div class="setting-value">
+        1.0.0
+      </div>
+
+    </div>
+
+    `
+  );
+
+}
+
+
+// ==========================================
+// APP OPENER
+// ==========================================
+
+function openApp(
+  app
+) {
+
+  if (app === "terminal") {
+    openTerminal();
+  }
+
+  if (app === "files") {
+    openFiles();
+  }
+
+  if (app === "notes") {
+    openNotes();
+  }
+
+  if (app === "calculator") {
+    openCalculator();
+  }
+
+  if (app === "monitor") {
+    openMonitor();
+  }
+
+  if (app === "settings") {
+    openSettings();
+  }
+
+}
+
+
+// ==========================================
+// APP BUTTONS
+// ==========================================
+
+document
+  .querySelectorAll(
+    "[data-app]"
+  )
+  .forEach(
+    button => {
+
+      button.addEventListener(
+        "click",
+        () => {
+
+          openApp(
+            button.dataset.app
+          );
+
+          appMenu.classList.remove(
+            "open"
+          );
+
+        }
       );
 
     }
   );
 
 
-  peopleCount.textContent =
-    people;
+// ==========================================
+// APP MENU
+// ==========================================
 
-  detectedCount.textContent =
-    detectedNames.length;
-
-
-  if (detectedNames.length === 0) {
-
-    detectionList.textContent =
-      "Nothing detected";
-
-  } else {
-
-    detectionList.innerHTML =
-      detectedNames
-        .map(
-          item =>
-            `<div class="detection-item">${item}</div>`
-        )
-        .join("");
-
-  }
-
-
-  requestAnimationFrame(
-    detectObjects
+const appMenu =
+  document.getElementById(
+    "appMenu"
   );
 
-}
+const appsButton =
+  document.getElementById(
+    "appsButton"
+  );
+
+const closeMenu =
+  document.getElementById(
+    "closeMenu"
+  );
+
+
+appsButton.addEventListener(
+  "click",
+  () => {
+
+    appMenu.classList.toggle(
+      "open"
+    );
+
+  }
+);
+
+
+closeMenu.addEventListener(
+  "click",
+  () => {
+
+    appMenu.classList.remove(
+      "open"
+    );
+
+  }
+);
+
+
+// ==========================================
+// DOCK
+// ==========================================
+
+document
+  .getElementById(
+    "homeButton"
+  )
+  .addEventListener(
+    "click",
+    () => {
+
+      document
+        .querySelectorAll(
+          ".window"
+        )
+        .forEach(
+          window => window.remove()
+        );
+
+      appMenu.classList.remove(
+        "open"
+      );
+
+    }
+  );
+
+
+document
+  .getElementById(
+    "terminalButton"
+  )
+  .addEventListener(
+    "click",
+    () => {
+
+      openTerminal();
+
+    }
+  );
+
+
+document
+  .getElementById(
+    "settingsButton"
+  )
+  .addEventListener(
+    "click",
+    () => {
+
+      openSettings();
+
+    }
+  );
+
+
+// ==========================================
+// KEYBOARD
+// ==========================================
+
+document.addEventListener(
+  "keydown",
+  event => {
+
+    if (
+      event.key === "Escape"
+    ) {
+
+      appMenu.classList.remove(
+        "open"
+      );
+
+    }
+
+  }
+);
