@@ -1,116 +1,119 @@
 <!DOCTYPE html>
 <html lang="ru">
-
 <head>
-    <meta charset="UTF-8">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+  <title>SOULGLAZ</title>
 
-    <title>SoulGlaz</title>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  >
 
-    <link
-        rel="stylesheet"
-        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    >
-
-    <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-    <header class="header">
+  <header>
+    <div class="logo">SOULGLAZ</div>
 
-        <div class="logo">
-            ◉ SOUL<span>GLAZ</span>
-        </div>
-
-        <div class="status">
-            <span class="dot"></span>
-            LIVE
-        </div>
-
-        <div id="objectCount">
-            OBJECTS: 0
-        </div>
-
-    </header>
-
-
-    <aside class="panel">
-
-        <h2>SOULGLAZ RADAR</h2>
-
-        <div class="category">
-            <span>✈ AIRCRAFT</span>
-            <strong id="aircraftCount">0</strong>
-        </div>
-
-        <div class="category">
-            <span>🚁 ROTORCRAFT</span>
-            <strong id="helicopterCount">0</strong>
-        </div>
-
-        <div class="category">
-            <span>🚢 VESSELS</span>
-            <strong>—</strong>
-        </div>
-
-        <div class="category">
-            <span>📷 VISION</span>
-            <strong>OFFLINE</strong>
-        </div>
-
-        <div class="info">
-
-            <div>DATA SOURCE</div>
-
-            <strong>
-                OPENSKY NETWORK
-            </strong>
-
-        </div>
-
-    </aside>
-
-
-    <main id="map"></main>
-
-
-    <div class="coordinates">
-
-        SOULGLAZ<br>
-
-        <span id="mapPosition">
-            GLOBAL MAP
-        </span>
-
+    <div class="status">
+      <span class="status-dot"></span>
+      LIVE
     </div>
+  </header>
+
+  <main>
+
+    <section class="radar-section">
+      <div class="section-title">RADAR</div>
+
+      <div id="map"></div>
+
+      <div class="radar-info">
+        <span>OBJECTS: <b id="objectCount">0</b></span>
+        <span>LAT: <b id="lat">0.000000</b></span>
+        <span>LON: <b id="lon">0.000000</b></span>
+      </div>
+    </section>
 
 
-    <div class="legend">
+    <section class="vision-section">
 
-        <span>
-            <i class="air"></i>
-            AIR
-        </span>
+      <div class="section-title">
+        VISION
+        <span id="visionStatus">OFFLINE</span>
+      </div>
 
-        <span>
-            <i class="you"></i>
-            YOU
-        </span>
+      <div class="camera-container">
 
-    </div>
+        <video
+          id="camera"
+          autoplay
+          playsinline
+          muted
+        ></video>
+
+        <canvas id="visionCanvas"></canvas>
+
+        <div id="cameraMessage">
+          CAMERA OFFLINE
+        </div>
+
+      </div>
+
+      <div class="vision-controls">
+
+        <button id="startCamera">
+          START CAMERA
+        </button>
+
+        <button id="switchCamera">
+          SWITCH CAMERA
+        </button>
+
+      </div>
+
+      <div class="vision-stats">
+
+        <div>
+          <span>PEOPLE</span>
+          <b id="peopleCount">0</b>
+        </div>
+
+        <div>
+          <span>OBJECTS</span>
+          <b id="detectedCount">0</b>
+        </div>
+
+      </div>
+
+      <div class="detections">
+        <div class="detection-title">
+          DETECTED
+        </div>
+
+        <div id="detectionList">
+          Nothing detected
+        </div>
+      </div>
+
+    </section>
+
+  </main>
 
 
-    <script
-        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
-    </script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <script src="app.js"></script>
+  <!-- TensorFlow -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+
+  <!-- COCO-SSD object detection model -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+
+  <script src="app.js"></script>
 
 </body>
-
 </html>
