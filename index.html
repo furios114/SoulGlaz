@@ -2,143 +2,161 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#08090d">
-  <title>MINDOS</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#090b10">
+  <meta name="description" content="MINDOS — lightweight browser operating system">
+  <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="style.css">
+  <title>MINDOS</title>
 </head>
-
 <body>
-
-  <div class="os">
-
-    <!-- TOP BAR -->
-    <header class="topbar">
-      <div class="brand">
-        <span class="brand-mark">M</span>
-        <span>MINDOS</span>
-      </div>
-
-      <div class="system-status">
-        <span class="online-dot"></span>
-        SYSTEM ONLINE
-      </div>
-
-      <div id="clock">00:00</div>
-    </header>
-
-
-    <!-- DESKTOP -->
-    <main id="desktop">
-
-      <div class="wallpaper-glow"></div>
-
-      <div class="welcome">
-        <div class="welcome-small">WELCOME BACK</div>
-        <div class="welcome-title">MINDOS</div>
-        <div class="welcome-line"></div>
-        <div class="welcome-sub">
-          PERSONAL DIGITAL ENVIRONMENT
-        </div>
-      </div>
-
-
-      <!-- APP ICONS -->
-
-      <div class="apps">
-
-        <button class="app-icon" data-app="terminal">
-          <span class="icon">⌘</span>
-          <span>Terminal</span>
-        </button>
-
-        <button class="app-icon" data-app="files">
-          <span class="icon">▣</span>
-          <span>Files</span>
-        </button>
-
-        <button class="app-icon" data-app="notes">
-          <span class="icon">▤</span>
-          <span>Notes</span>
-        </button>
-
-        <button class="app-icon" data-app="calculator">
-          <span class="icon">＋</span>
-          <span>Calculator</span>
-        </button>
-
-        <button class="app-icon" data-app="monitor">
-          <span class="icon">⌁</span>
-          <span>Monitor</span>
-        </button>
-
-        <button class="app-icon" data-app="settings">
-          <span class="icon">⚙</span>
-          <span>Settings</span>
-        </button>
-
-      </div>
-
-
-      <!-- WINDOWS -->
-
-      <div id="windows"></div>
-
-    </main>
-
-
-    <!-- BOTTOM DOCK -->
-
-    <nav class="dock">
-
-      <button id="homeButton" class="dock-button active">
-        <span>⌂</span>
-        <small>HOME</small>
-      </button>
-
-      <button id="appsButton" class="dock-button">
-        <span>▦</span>
-        <small>APPS</small>
-      </button>
-
-      <button id="terminalButton" class="dock-button">
-        <span>⌘</span>
-        <small>TERM</small>
-      </button>
-
-      <button id="settingsButton" class="dock-button">
-        <span>⚙</span>
-        <small>SYSTEM</small>
-      </button>
-
-    </nav>
-
-
-    <!-- APP MENU -->
-
-    <div id="appMenu" class="app-menu">
-
-      <div class="menu-header">
-        <span>APPLICATIONS</span>
-        <button id="closeMenu">×</button>
-      </div>
-
-      <div class="menu-grid">
-
-        <button data-app="terminal">⌘<small>Terminal</small></button>
-        <button data-app="files">▣<small>Files</small></button>
-        <button data-app="notes">▤<small>Notes</small></button>
-        <button data-app="calculator">＋<small>Calculator</small></button>
-        <button data-app="monitor">⌁<small>Monitor</small></button>
-        <button data-app="settings">⚙<small>Settings</small></button>
-
-      </div>
-
-    </div>
-
+  <div id="boot" class="boot">
+    <div class="boot-logo">M</div>
+    <div class="boot-name">MINDOS</div>
+    <div class="boot-status">INITIALIZING CORE...</div>
   </div>
 
-  <script src="app.js"></script>
+  <div id="app" class="app hidden">
+    <header class="topbar">
+      <button class="brand" data-action="home" type="button">
+        <span class="brand-mark">M</span>
+        <span>MINDOS</span>
+      </button>
 
+      <div class="system-status">
+        <span id="networkDot" class="status-dot"></span>
+        <span id="networkText">ONLINE</span>
+        <span id="clock">--:--</span>
+      </div>
+    </header>
+
+    <main id="home" class="home page">
+      <section class="welcome">
+        <div>
+          <div id="greeting" class="eyebrow">SYSTEM</div>
+          <h1>Everything<br>under control.</h1>
+        </div>
+        <div id="coreStatus" class="core-badge">CORE READY</div>
+      </section>
+
+      <section class="quick-grid">
+        <button class="app-card accent" data-app="terminal" type="button">
+          <span class="app-icon">›_</span>
+          <strong>Terminal</strong>
+          <small>System shell</small>
+        </button>
+
+        <button class="app-card" data-app="files" type="button">
+          <span class="app-icon">□</span>
+          <strong>Files</strong>
+          <small>Virtual storage</small>
+        </button>
+
+        <button class="app-card" data-app="notes" type="button">
+          <span class="app-icon">✎</span>
+          <strong>Notes</strong>
+          <small>Local workspace</small>
+        </button>
+
+        <button class="app-card" data-app="calculator" type="button">
+          <span class="app-icon">＋</span>
+          <strong>Calculator</strong>
+          <small>Fast calculations</small>
+        </button>
+      </section>
+
+      <section class="core-card">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">LIVE CORE</span>
+            <h2>System state</h2>
+          </div>
+          <span id="readyIndicator" class="live-indicator">● READY</span>
+        </div>
+
+        <div class="metrics">
+          <div>
+            <span>NETWORK</span>
+            <strong id="metricNetwork">ONLINE</strong>
+          </div>
+          <div>
+            <span>MEMORY</span>
+            <strong id="metricMemory">—</strong>
+          </div>
+          <div>
+            <span>THREADS</span>
+            <strong id="metricThreads">—</strong>
+          </div>
+        </div>
+      </section>
+
+      <section id="smartActions" class="smart-card hidden"></section>
+
+      <section class="timeline-card">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">TIMELINE</span>
+            <h2>Recent activity</h2>
+          </div>
+          <button data-action="clearTimeline" class="text-button" type="button">Clear</button>
+        </div>
+        <div id="timeline"></div>
+      </section>
+    </main>
+
+    <main id="apps" class="page hidden">
+      <section class="page-title">
+        <span class="eyebrow">MINDOS</span>
+        <h1>Applications</h1>
+      </section>
+
+      <div class="apps-list">
+        <button class="list-app" data-app="terminal" type="button">
+          <span>›_</span><div><strong>Terminal</strong><small>Commands and system control</small></div>
+        </button>
+        <button class="list-app" data-app="files" type="button">
+          <span>□</span><div><strong>Files</strong><small>Virtual file system</small></div>
+        </button>
+        <button class="list-app" data-app="notes" type="button">
+          <span>✎</span><div><strong>Notes</strong><small>Persistent local notes</small></div>
+        </button>
+        <button class="list-app" data-app="calculator" type="button">
+          <span>＋</span><div><strong>Calculator</strong><small>Simple and fast calculator</small></div>
+        </button>
+        <button class="list-app" data-app="monitor" type="button">
+          <span>◉</span><div><strong>Diagnostics</strong><small>Performance and browser state</small></div>
+        </button>
+        <button class="list-app" data-app="settings" type="button">
+          <span>⚙</span><div><strong>Settings</strong><small>MINDOS configuration</small></div>
+        </button>
+      </div>
+    </main>
+
+    <nav class="dock">
+      <button data-action="home" type="button"><span>⌂</span><small>Home</small></button>
+      <button data-action="apps" type="button"><span>▦</span><small>Apps</small></button>
+      <button data-app="terminal" type="button"><span>›_</span><small>Terminal</small></button>
+      <button data-app="settings" type="button"><span>⚙</span><small>Settings</small></button>
+    </nav>
+  </div>
+
+  <div id="appView" class="app-view hidden">
+    <div class="app-window">
+      <header class="app-header">
+        <button id="backButton" type="button" class="back-button">‹</button>
+        <div>
+          <span id="appHeaderLabel" class="eyebrow">APP</span>
+          <h2 id="appHeaderTitle">Application</h2>
+        </div>
+        <span id="appHeaderStatus" class="app-online">●</span>
+      </header>
+      <div id="appContent" class="app-content"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+  <div id="jsStatus" class="js-status">STARTING</div>
+
+  <script src="app.js"></script>
 </body>
 </html>
